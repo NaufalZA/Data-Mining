@@ -10,6 +10,13 @@ class Stemmer:
     def __init__(self):
         self.kamus = self.load_kamus()
         self.stopwords = self.load_stopwords()
+        self.forbidden_combinations = {
+            'be': ['i'],
+            'di': ['an'],
+            'ke': ['i', 'kan'],
+            'me': ['an'],
+            'se': ['i', 'kan']
+        }
 
     def load_kamus(self):
         with open('documents/Kamus.txt', 'r') as file:
@@ -114,27 +121,96 @@ class Stemmer:
         return self.remove_prefix(word, iteration + 1)
 
     def stem_word(self, word):
+        steps = []
         if not self.is_valid_word(word):
-            return word
+            return word, steps
             
         # Step 1: Check in dictionary
+        steps.append(f"Step 1: Checking '{word}' in dictionary")
         if self.check_kamus(word):
-            return word
+            steps.append("Result: Found in dictionary")
+            return word, steps
+
+        original_word = word
+        suffix_removed = False
 
         # Step 2: Remove inflection suffixes
-        word = self.remove_inflection_suffixes(word)
+        steps.append(f"Step 2: Checking inflection suffixes for '{word}'")
+        if any(word.endswith(suffix) for suffix in ['lah', 'kah', 'tah', 'pun']):
+            old_word = word
+            word = self.remove_inflection_suffixes(word)
+            steps.append(f"Removed particle suffix: '{old_word}' → '{word}'")
+            
+            if any(word.endswith(suffix) for suffix in ['ku', 'mu', 'nya']):
+                old_word = word
+                word = self.remove_inflection_suffixes(word)
+                steps.append(f"Removed possessive pronoun: '{old_word}' → '{word}'")
+
         if self.check_kamus(word):
-            return word
+            steps.append(f"Result: Found '{word}' in dictionary after inflection removal")
+            return word, steps
 
         # Step 3: Remove derivation suffixes
-        word = self.remove_derivation_suffixes(word)
-        if self.check_kamus(word):
-            return word
+        steps.append(f"Step 3: Checking derivation suffixes for '{word}'")
+        if any(word.endswith(suffix) for suffix in ['i', 'an', 'kan']):
+            temp_word = word
+            if word.endswith('kan'):
+                word = word[:-3]
+                suffix_removed = 'kan'
+                steps.append(f"Removed -kan: '{temp_word}' → '{word}'")
+            elif word.endswith('i'):
+                word = word[:-1]
+                suffix_removed = 'i'
+                steps.append(f"Removed -i: '{temp_word}' → '{word}'")
+            elif word.endswith('an'):
+                word = word[:-2]
+                suffix_removed = 'an'
+                steps.append(f"Removed -an: '{temp_word}' → '{word}'")
+                
+                if word.endswith('k'):
+                    k_word = word[:-1]
+                    steps.append(f"Checking k-removal: '{word}' → '{k_word}'")
+                    if self.check_kamus(k_word):
+                        steps.append(f"Result: Found '{k_word}' in dictionary")
+                        return k_word, steps
+                    word = temp_word
+                    steps.append("Restored original: k-removal unsuccessful")
 
-        # Step 4: Remove prefixes
-        word = self.remove_prefix(word)
+            if self.check_kamus(word):
+                steps.append(f"Result: Found '{word}' in dictionary")
+                return word, steps
+            word = temp_word
+            steps.append("Restored original: suffix removal unsuccessful")
+
+        # Step 4: Check prefix-suffix combination
+        if suffix_removed:
+            prefix = self.get_prefix_type(word)
+            steps.append(f"Step 4: Checking prefix-suffix combination: prefix='{prefix}', suffix='{suffix_removed}'")
+            if prefix and suffix_removed in self.forbidden_combinations.get(prefix, []):
+                steps.append(f"Found forbidden combination: {prefix}- with -{suffix_removed}")
+                return original_word, steps
+
+        # Step 4b: Remove prefixes
+        steps.append(f"Step 4b: Removing prefixes from '{word}'")
+        result = self.remove_prefix(word)
+        if result != word:
+            steps.append(f"Removed prefix: '{word}' → '{result}'")
+            if self.check_kamus(result):
+                steps.append(f"Result: Found '{result}' in dictionary")
+                return result, steps
         
-        return word
+        # Step 6: Return original word if no root found
+        steps.append("Step 6: No root word found, returning original word")
+        return original_word, steps
+
+    def get_prefix_type(self, word):
+        if word.startswith(('di', 'ke', 'se')):
+            return word[:2]
+        elif word.startswith(('ter', 'bel')):
+            return word[:3]
+        elif word.startswith(('me', 'pe', 'be')):
+            return word[:2]
+        return None
 
     def stem_text(self, text):
         # Remove stopwords first
@@ -142,9 +218,15 @@ class Stemmer:
         
         # Split into words and stem each word
         words = text.split()
-        stemmed_words = [self.stem_word(word) for word in words]
+        results = []
+        all_steps = []
         
-        return ' '.join(stemmed_words)
+        for word in words:
+            stemmed_word, steps = self.stem_word(word)
+            results.append(stemmed_word)
+            all_steps.append((word, stemmed_word, steps))
+            
+        return ' '.join(results), all_steps
 
 def read_file_content(file_path):
     file_extension = os.path.splitext(file_path)[1].lower()
@@ -169,24 +251,26 @@ def read_file_content(file_path):
     else:
         raise ValueError("Unsupported file format")
 
-def export_to_word(original_text, stemmed_text, input_file_path):
-    # Get original filename without extension
+def export_to_word(original_text, stemmed_text, steps, input_file_path):
     original_filename = os.path.splitext(os.path.basename(input_file_path))[0]
     output_filename = f"results/Stemmed_{original_filename}.docx"
     
-    # Create new Word document
     doc = Document()
     doc.add_heading('Stemming Results', 0)
     
-    # Add original text section
-    doc.add_heading('Original Text:', level=1)
-    doc.add_paragraph(original_text)
+    # Add stemming process details
+    doc.add_heading('Stemming Process:', level=1)
+    for original, stemmed, word_steps in steps:
+        if original != stemmed:  # Only show words that were actually stemmed
+            doc.add_heading(f"Word: {original} → {stemmed}", level=2)
+            for step in word_steps:
+                doc.add_paragraph(step, style='List Bullet')
+            doc.add_paragraph()  # Add space between words
     
-    # Add stemmed text section
-    doc.add_heading('Stemmed Text:', level=1)
+    # Add final stemmed text
+    doc.add_heading('Final Stemmed Text:', level=1)
     doc.add_paragraph(stemmed_text)
     
-    # Save document
     doc.save(output_filename)
     return output_filename
 
@@ -210,15 +294,13 @@ if __name__ == "__main__":
     if file_path:
         try:
             text = read_file_content(file_path)
-            stemmed_text = stemmer.stem_text(text)
+            stemmed_text, steps = stemmer.stem_text(text)
             
-            print(f"\nOriginal text from file:")
-            print(text)
             print(f"\nStemmed text:")
             print(stemmed_text)
             
             # Export results to Word document
-            output_file = export_to_word(text, stemmed_text, file_path)
+            output_file = export_to_word(text, stemmed_text, steps, file_path)
             print(f"\nResults exported to: {output_file}")
             
         except Exception as e:
