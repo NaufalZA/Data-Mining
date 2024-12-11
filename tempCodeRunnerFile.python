@@ -1,0 +1,23 @@
+import tkinter as tk
+from tkinter import filedialog
+
+def count_words_in_file():
+    # Membuka dialog file untuk memilih file
+    root = tk.Tk()
+    root.withdraw()  # Menyembunyikan window utama
+    file_path = filedialog.askopenfilename(title="Pilih file")
+
+    if file_path:
+        try:
+            with open(file_path, 'r') as file:
+                content = file.read()
+                words = content.split()
+                return len(words)
+        except FileNotFoundError:
+            return "File tidak ditemukan."
+    else:
+        return "Tidak ada file yang dipilih."
+
+# Contoh penggunaan
+word_count = count_words_in_file()
+print(f"Jumlah kata dalam file: {word_count}")

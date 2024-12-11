@@ -1,0 +1,12 @@
+# python -m venv Nama
+# cd Nama
+# scripts/activate
+
+# pip install -r ../requirements.txt
+
+umpy 
+pandas 
+matplotlib 
+scipy 
+wheel 
+ipykernel
