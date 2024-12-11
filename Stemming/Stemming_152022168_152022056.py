@@ -1,5 +1,7 @@
 import csv
 import re
+from tkinter import filedialog
+import tkinter as tk
 
 class Stemmer:
     def __init__(self):
@@ -145,14 +147,25 @@ class Stemmer:
 if __name__ == "__main__":
     stemmer = Stemmer()
     
-    # Test cases
-    test_texts = [
-        "mendengarkan pembicaraan",
-        "perjuangan kemerdekaan",
-        "pembelajaran matematika",
-        "perkuliahan mahasiswa"
-    ]
+    # Create root window but hide it
+    root = tk.Tk()
+    root.withdraw()
     
-    for text in test_texts:
-        print(f"\nOriginal: {text}")
-        print(f"Stemmed: {stemmer.stem_text(text)}")
+    # Open file dialog
+    file_path = filedialog.askopenfilename(
+        title="Select Text File",
+        filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+    )
+    
+    if file_path:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                text = file.read()
+                print(f"\nOriginal text from file:")
+                print(text)
+                print(f"\nStemmed text:")
+                print(stemmer.stem_text(text))
+        except Exception as e:
+            print(f"Error reading file: {e}")
+    else:
+        print("No file selected")
