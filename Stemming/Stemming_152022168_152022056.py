@@ -2,6 +2,9 @@ import csv
 import re
 from tkinter import filedialog
 import tkinter as tk
+import PyPDF2
+from docx import Document
+import os
 
 class Stemmer:
     def __init__(self):
@@ -143,29 +146,82 @@ class Stemmer:
         
         return ' '.join(stemmed_words)
 
-# Example usage
+def read_file_content(file_path):
+    file_extension = os.path.splitext(file_path)[1].lower()
+    
+    if file_extension == '.pdf':
+        with open(file_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfReader(file)
+            text = ''
+            for page in pdf_reader.pages:
+                text += page.extract_text() + '\n'
+            return text
+            
+    elif file_extension == '.docx':
+        doc = Document(file_path)
+        text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+        return text
+        
+    elif file_extension == '.txt':
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return file.read()
+    
+    else:
+        raise ValueError("Unsupported file format")
+
+def export_to_word(original_text, stemmed_text, input_file_path):
+    # Get original filename without extension
+    original_filename = os.path.splitext(os.path.basename(input_file_path))[0]
+    output_filename = f"results/Stemmed_{original_filename}.docx"
+    
+    # Create new Word document
+    doc = Document()
+    doc.add_heading('Stemming Results', 0)
+    
+    # Add original text section
+    doc.add_heading('Original Text:', level=1)
+    doc.add_paragraph(original_text)
+    
+    # Add stemmed text section
+    doc.add_heading('Stemmed Text:', level=1)
+    doc.add_paragraph(stemmed_text)
+    
+    # Save document
+    doc.save(output_filename)
+    return output_filename
+
 if __name__ == "__main__":
     stemmer = Stemmer()
     
-    # Create root window but hide it
     root = tk.Tk()
     root.withdraw()
     
-    # Open file dialog
     file_path = filedialog.askopenfilename(
-        title="Select Text File",
-        filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
+        title="Select File",
+        filetypes=[
+            ("All supported files", "*.txt;*.pdf;*.docx"),
+            ("Text files", "*.txt"),
+            ("PDF files", "*.pdf"),
+            ("Word files", "*.docx"),
+            ("All files", "*.*")
+        ]
     )
     
     if file_path:
         try:
-            with open(file_path, 'r', encoding='utf-8') as file:
-                text = file.read()
-                print(f"\nOriginal text from file:")
-                print(text)
-                print(f"\nStemmed text:")
-                print(stemmer.stem_text(text))
+            text = read_file_content(file_path)
+            stemmed_text = stemmer.stem_text(text)
+            
+            print(f"\nOriginal text from file:")
+            print(text)
+            print(f"\nStemmed text:")
+            print(stemmed_text)
+            
+            # Export results to Word document
+            output_file = export_to_word(text, stemmed_text, file_path)
+            print(f"\nResults exported to: {output_file}")
+            
         except Exception as e:
-            print(f"Error reading file: {e}")
+            print(f"Error processing file: {e}")
     else:
         print("No file selected")
