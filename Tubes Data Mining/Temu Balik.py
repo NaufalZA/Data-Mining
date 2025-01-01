@@ -357,16 +357,8 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path):
     for word, in_dict in dict_check:
         doc.add_paragraph(f"• {word}: {'Found in dictionary' if in_dict else 'Not found'}", style='List Bullet')
     
-    # Show detailed stemming process for each word
-    doc.add_heading('5. Stemming Process:', level=1)
-    for original, stemmed, word_steps in steps:
-        doc.add_heading(f"Word: {original} → {stemmed}", level=2)
-        for step in word_steps:
-            doc.add_paragraph(step, style='List Bullet')
-        doc.add_paragraph()  # Add space between words
-    
     # Show final stemmed result
-    doc.add_heading('6. Final Stemmed Text:', level=1)
+    doc.add_heading('5. Final Stemmed Text:', level=1)
     doc.add_paragraph(stemmed_text)
     
     doc.save(output_filename)
