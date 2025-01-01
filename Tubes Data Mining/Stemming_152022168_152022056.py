@@ -103,7 +103,7 @@ class Stemmer:
         if iteration > 3:
             return word, None  # Return None as prefix type if max iterations reached
 
-        # Track previous prefix for comparison
+        # Track previous prefix for comparisons
         previous_prefix = None if iteration == 1 else self.get_prefix_type(word)
 
         if word[:2] in ['di', 'ke', 'se']:
