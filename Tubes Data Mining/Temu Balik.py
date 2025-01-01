@@ -355,7 +355,8 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path):
     dict_check = [(t['token'], stemmer.check_kamus(t['token'])) for t in valid_tokens]
     doc.add_heading('4. Dictionary Check:', level=1)
     for word, in_dict in dict_check:
-        doc.add_paragraph(f"• {word}: {'Found in dictionary' if in_dict else 'Not found'}", style='List Bullet')
+        p = doc.add_paragraph(style='List Bullet')
+        p.text = f"{word}: {'Found in dictionary' if in_dict else 'Not found'}"
     
     # Show final stemmed result
     doc.add_heading('5. Final Stemmed Text:', level=1)
