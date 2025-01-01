@@ -351,14 +351,25 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path):
     valid_text = ', '.join([t['token'] for t in valid_tokens])
     doc.add_paragraph(valid_text)
     
-    # Show words found in dictionary
+    # Show words found in dictionary with counts
     dict_check = [(t['token'], stemmer.check_kamus(t['token'])) for t in valid_tokens]
     doc.add_heading('4. Dictionary Check:', level=1)
+    
+    # Count total words and found root words
+    total_words = len(dict_check)
+    found_words = sum(1 for _, in_dict in dict_check if in_dict)
+    
+    # Add summary paragraph
+    summary = doc.add_paragraph()
+    summary.add_run(f"Total words: {total_words}\n").bold = True
+    summary.add_run(f"Root words found in dictionary: {found_words}\n").bold = True
+    
+    # List all words and their status
     for word, in_dict in dict_check:
         p = doc.add_paragraph(style='List Bullet')
         p.text = f"{word}: {'Found in dictionary' if in_dict else 'Not found'}"
     
-    # Show final stemmed result
+    # Show final stemmed text
     doc.add_heading('5. Final Stemmed Text:', level=1)
     doc.add_paragraph(stemmed_text)
     
