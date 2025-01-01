@@ -4,7 +4,7 @@
 
 # pip install -r ../requirements.txt
 
-umpy 
+numpy 
 pandas 
 matplotlib 
 scipy 
