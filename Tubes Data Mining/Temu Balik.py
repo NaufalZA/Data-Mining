@@ -333,36 +333,32 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path):
     doc = Document()
     doc.add_heading('Stemming Results', 0)
     
-    # Show all processing stages
-    doc.add_heading('1. Original Text:', level=1)
-    doc.add_paragraph(original_text)
-    
     # Show tokenization results
     tokens = stemmer.tokenize(original_text)
-    doc.add_heading('2. After Tokenization:', level=1)
+    doc.add_heading('1. After Tokenization:', level=1)
     token_text = ', '.join([t['token'] for t in tokens])
     doc.add_paragraph(token_text)
     
     # Show after stopword removal
     filtered_tokens = [t for t in tokens if t['token'] not in stemmer.stopwords]
-    doc.add_heading('3. After Stopword Removal:', level=1)
+    doc.add_heading('2. After Stopword Removal:', level=1)
     stopword_text = ', '.join([t['token'] for t in filtered_tokens])
     doc.add_paragraph(stopword_text)
     
     # Show after number removal
     valid_tokens = [t for t in filtered_tokens if not any(c.isdigit() for c in t['token'])]
-    doc.add_heading('4. After Number Removal:', level=1)
+    doc.add_heading('3. After Number Removal:', level=1)
     valid_text = ', '.join([t['token'] for t in valid_tokens])
     doc.add_paragraph(valid_text)
     
     # Show words found in dictionary
     dict_check = [(t['token'], stemmer.check_kamus(t['token'])) for t in valid_tokens]
-    doc.add_heading('5. Dictionary Check:', level=1)
+    doc.add_heading('4. Dictionary Check:', level=1)
     for word, in_dict in dict_check:
         doc.add_paragraph(f"• {word}: {'Found in dictionary' if in_dict else 'Not found'}", style='List Bullet')
     
     # Show detailed stemming process for each word
-    doc.add_heading('6. Stemming Process:', level=1)
+    doc.add_heading('5. Stemming Process:', level=1)
     for original, stemmed, word_steps in steps:
         doc.add_heading(f"Word: {original} → {stemmed}", level=2)
         for step in word_steps:
@@ -370,7 +366,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path):
         doc.add_paragraph()  # Add space between words
     
     # Show final stemmed result
-    doc.add_heading('7. Final Stemmed Text:', level=1)
+    doc.add_heading('6. Final Stemmed Text:', level=1)
     doc.add_paragraph(stemmed_text)
     
     doc.save(output_filename)
