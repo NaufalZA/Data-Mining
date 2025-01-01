@@ -6,6 +6,8 @@ import PyPDF2
 from docx import Document
 import os
 import string
+import math
+from collections import defaultdict
 
 class Stemmer:
     def __init__(self):
@@ -326,12 +328,12 @@ def read_file_content(file_path):
     else:
         raise ValueError("Unsupported file format")
 
-def export_to_word(original_text, stemmed_text, steps, input_file_path):
+def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data=None):
     original_filename = os.path.splitext(os.path.basename(input_file_path))[0]
     output_filename = f"results/Stemmed_{original_filename}.docx"
     
     doc = Document()
-    doc.add_heading('Stemming Results', 0)
+    doc.add_heading('Stemming and VSM Results', 0)
     
     # Show tokenization results
     tokens = stemmer.tokenize(original_text)
@@ -373,17 +375,136 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path):
     doc.add_heading('5. Final Stemmed Text:', level=1)
     doc.add_paragraph(stemmed_text)
     
+    # Add VSM calculations if available
+    if vsm_data:
+        doc.add_heading('6. Vector Space Model Calculations (TF Only):', level=1)
+        
+        # Document Term Matrix
+        doc.add_heading('Term-Document Matrix (Term Frequencies):', level=2)
+        terms = sorted(list(vsm_data['terms']))
+        
+        # Create table for term frequencies
+        table = doc.add_table(rows=1, cols=len(vsm_data['documents']) + 1)
+        table.style = 'Table Grid'
+        
+        # Header row
+        header_cells = table.rows[0].cells
+        header_cells[0].text = 'Term'
+        for i in range(len(vsm_data['documents'])):
+            header_cells[i+1].text = f'Doc {i+1}'
+            
+        # Add term frequencies
+        for term in terms:
+            row_cells = table.add_row().cells
+            row_cells[0].text = term
+            for doc_id in range(len(vsm_data['documents'])):
+                freq = vsm_data['term_doc_freq'][term][doc_id]
+                row_cells[doc_id+1].text = str(freq)
+            
+        # Document Vectors
+        doc.add_heading('Term Frequency Vectors:', level=2)
+        for i, doc_vector in enumerate(vsm_data['doc_vectors']):
+            doc.add_paragraph(f'Document {i+1}:')
+            vector_table = doc.add_table(rows=1, cols=2)
+            vector_table.style = 'Table Grid'
+            header_cells = vector_table.rows[0].cells
+            header_cells[0].text = 'Term'
+            header_cells[1].text = 'TF Weight'
+            
+            for term in terms:
+                if term in doc_vector:
+                    row_cells = vector_table.add_row().cells
+                    row_cells[0].text = term
+                    row_cells[1].text = str(doc_vector[term])
+
     doc.save(output_filename)
     return output_filename
 
+class VSM:
+    def __init__(self, stemmer):
+        self.stemmer = stemmer
+        self.documents = []
+        self.doc_vectors = []
+        self.terms = set()
+        self.term_doc_freq = defaultdict(lambda: defaultdict(int))
+
+    def add_document(self, doc_id, content):
+        # Stem the document content
+        stemmed_text, _ = self.stemmer.stem_text(content)
+        tokens = stemmed_text.split()
+        
+        # Store document
+        self.documents.append({
+            'id': doc_id,
+            'content': content,
+            'stemmed': stemmed_text,
+            'tokens': tokens
+        })
+        
+        # Update term frequencies
+        for term in tokens:
+            self.terms.add(term)
+            self.term_doc_freq[term][doc_id] += 1
+
+    def calculate_weights(self):
+        # Calculate TF vectors for each document (without IDF)
+        self.doc_vectors = []
+        for doc in self.documents:
+            vector = {}
+            doc_id = doc['id']
+            for term in self.terms:
+                tf = self.term_doc_freq[term][doc_id]
+                if tf > 0:
+                    # Using raw term frequency
+                    vector[term] = tf
+            self.doc_vectors.append(vector)
+
+    def search(self, query):
+        # Stem the query
+        stemmed_query, _ = self.stemmer.stem_text(query)
+        query_terms = stemmed_query.split()
+
+        # Create query vector using TF only
+        query_vector = {}
+        for term in query_terms:
+            if term in self.terms:
+                query_vector[term] = query_terms.count(term)
+
+        # Calculate similarities
+        results = []
+        for i, doc_vector in enumerate(self.doc_vectors):
+            similarity = self.cosine_similarity(query_vector, doc_vector)
+            results.append((self.documents[i], similarity))
+
+        # Sort by similarity score
+        results.sort(key=lambda x: x[1], reverse=True)
+        return results
+
+    def cosine_similarity(self, vec1, vec2):
+        if not vec1 or not vec2:
+            return 0
+            
+        dot_product = sum(vec1.get(term, 0) * vec2.get(term, 0) for term in self.terms)
+        
+        norm1 = math.sqrt(sum(value * value for value in vec1.values()))
+        norm2 = math.sqrt(sum(value * value for value in vec2.values()))
+        
+        if norm1 == 0 or norm2 == 0:
+            return 0
+            
+        return dot_product / (norm1 * norm2)
+
+# Modify the main section to include VSM functionality
 if __name__ == "__main__":
     stemmer = Stemmer()
+    vsm = VSM(stemmer)
     
     root = tk.Tk()
     root.withdraw()
     
-    file_path = filedialog.askopenfilename(
-        title="Select File",
+    # Allow multiple file selection
+    file_paths = filedialog.askopenfilenames(
+        title="Select Documents",
         filetypes=[
             ("All supported files", "*.txt;*.pdf;*.docx"),
             ("Text files", "*.txt"),
@@ -393,19 +514,47 @@ if __name__ == "__main__":
         ]
     )
     
-    if file_path:
+    if file_paths:
         try:
-            text = read_file_content(file_path)
+            # Process all selected documents
+            for i, file_path in enumerate(file_paths):
+                text = read_file_content(file_path)
+                vsm.add_document(i, text)
+            
+            # Calculate document vectors
+            vsm.calculate_weights()
+            
+            # Prepare VSM data for export without IDF
+            vsm_data = {
+                'terms': vsm.terms,
+                'documents': vsm.documents,
+                'term_doc_freq': vsm.term_doc_freq,
+                'doc_vectors': vsm.doc_vectors
+            }
+            
+            # Process first document for stemming results
+            text = read_file_content(file_paths[0])
             stemmed_text, steps = stemmer.stem_text(text)
             
-            print(f"\nStemmed text:")
-            print(stemmed_text)
-            
-            # Export results to Word document
-            output_file = export_to_word(text, stemmed_text, steps, file_path)
+            # Export results with VSM data
+            output_file = export_to_word(text, stemmed_text, steps, file_paths[0], vsm_data)
             print(f"\nResults exported to: {output_file}")
             
+            # Search loop
+            while True:
+                query = input("\nEnter search query (or 'quit' to exit): ")
+                if query.lower() == 'quit':
+                    break
+                
+                results = vsm.search(query)
+                print("\nSearch Results:")
+                for doc, score in results:
+                    if score > 0:
+                        print(f"\nDocument: {file_paths[doc['id']]}")
+                        print(f"Similarity Score: {score:.4f}")
+                        print("Preview:", doc['content'][:200], "...")
+                
         except Exception as e:
-            print(f"Error processing file: {e}")
+            print(f"Error processing files: {e}")
     else:
-        print("No file selected")
+        print("No files selected")
