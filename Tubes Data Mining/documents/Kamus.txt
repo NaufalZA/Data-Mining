@@ -1,6 +1,4 @@
-﻿A 
-ab 
-aba 
+﻿aba 
 aba-aba 
 abad 
 abadi 
@@ -12,11 +10,7 @@ abaka
 abaktinal 
 abakus 
 abal-abal 
-aban 
 abang 
-abangan 
-abangga 
-abar 
 abatoar 
 abau 
 abdas 
@@ -99,7 +93,6 @@ acala
 acan 
 acang 
 acap 
-acap kali 
 acar 
 acara 
 acaram 
@@ -114,7 +107,6 @@ acu
 acuh 
 acum 
 acung 
-ad libitum 
 ada 
 adab 
 adad 
@@ -1231,7 +1223,6 @@ arborikultur
 arca 
 arcas 
 ardi 
-are 
 area 
 areal 
 arek 
@@ -28523,4 +28514,3 @@ Zulkaidah
 zulmat 
 zurafah 
 zuriah 
-zus

@@ -20,7 +20,9 @@ class Stemmer:
             'me': ['an'],
             'se': ['i', 'kan']
         }
-        self.punctuation = string.punctuation + '"' + '"' + ''' + ''' + '—' + '–'
+        self.punctuation = (string.punctuation + '"' + '"' + ''' + ''' + '—' + '–' + 
+                          '•' + '·' + '⋅' + '∙' + '‧' + '・' + '･' + '►' + '▪' + '○' + 
+                          '●' + '♦' + '■' + '★' + '☆' + '✓' + '✔' + '❖')
         self.prefix_types = {
             'di': 'di-',
             'ke': 'ke-',
@@ -258,13 +260,18 @@ class Stemmer:
         # Convert to lowercase
         text = text.lower()
         
-        # Replace newlines with spaces
+        # Replace newlines and special characters with spaces
         text = text.replace('\n', ' ')
+        text = text.replace('\t', ' ')
+        text = text.replace('\r', ' ')
         
-        # Handle punctuation
+        # Handle punctuation and special characters
         for p in self.punctuation:
             text = text.replace(p, ' ')
             
+        # Remove zero-width spaces and other invisible characters
+        text = re.sub(r'[\u200b\u200c\u200d\ufeff\xa0]', ' ', text)
+        
         # Remove extra whitespace
         text = ' '.join(text.split())
         
@@ -274,8 +281,11 @@ class Stemmer:
         position = 0
         
         for word in words:
-            # Skip empty strings and purely numeric tokens
-            if word and not word.isnumeric():
+            # Skip empty strings, purely numeric tokens, and single characters
+            if (word and 
+                not word.isnumeric() and 
+                len(word) > 1 and 
+                self.is_valid_word(word)):
                 tokens.append({
                     'token': word,
                     'position': position,
@@ -417,6 +427,24 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                     row_cells[0].text = term
                     row_cells[1].text = str(doc_vector[term])
 
+    if vsm_data and 'query' in vsm_data:
+        # Add search results section
+        doc.add_heading('7. Search Results:', level=1)
+        doc.add_paragraph(f"Query: {vsm_data['query']}")
+        
+        # Add search results table
+        results_table = doc.add_table(rows=1, cols=2)
+        results_table.style = 'Table Grid'
+        header_cells = results_table.rows[0].cells
+        header_cells[0].text = 'Document'
+        header_cells[1].text = 'Similarity Score'
+        
+        for result_doc, score in vsm_data['search_results']:
+            if score > 0:
+                row_cells = results_table.add_row().cells
+                row_cells[0].text = os.path.basename(file_paths[result_doc['id']])
+                row_cells[1].text = f"{score:.4f}"
+    
     doc.save(output_filename)
     return output_filename
 
@@ -502,7 +530,6 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
     
-    # Allow multiple file selection
     file_paths = filedialog.askopenfilenames(
         title="Select Documents",
         filetypes=[
@@ -517,29 +544,14 @@ if __name__ == "__main__":
     if file_paths:
         try:
             # Process all selected documents
+            print("\nLoading documents...")
             for i, file_path in enumerate(file_paths):
                 text = read_file_content(file_path)
                 vsm.add_document(i, text)
+                print(f"Loaded document {i+1}: {os.path.basename(file_path)}")
             
             # Calculate document vectors
             vsm.calculate_weights()
-            
-            # Prepare VSM data for export without IDF
-            vsm_data = {
-                'terms': vsm.terms,
-                'documents': vsm.documents,
-                'term_doc_freq': vsm.term_doc_freq,
-                'doc_vectors': vsm.doc_vectors
-            }
-            
-            # Process each document and export results
-            for i, file_path in enumerate(file_paths):
-                text = read_file_content(file_path)
-                stemmed_text, steps = stemmer.stem_text(text)
-                
-                # Export results with VSM data
-                output_file = export_to_word(text, stemmed_text, steps, file_path, vsm_data)
-                print(f"\nResults exported for document {i+1} to: {output_file}")
             
             # Search loop
             while True:
@@ -549,11 +561,28 @@ if __name__ == "__main__":
                 
                 results = vsm.search(query)
                 print("\nSearch Results:")
+                print("-" * 50)
+                
+                # Show all documents with their scores
                 for doc, score in results:
+                    doc_path = file_paths[doc['id']]
+                    print(f"Document {doc['id'] + 1}: {os.path.basename(doc_path)}")
+                    print(f"Similarity Score: {score:.4f}\n")
+                    
+                    # Process and export documents with matches silently
                     if score > 0:
-                        print(f"\nDocument: {file_paths[doc['id']]}")
-                        print(f"Similarity Score: {score:.4f}")
-                        print("Preview:", doc['content'][:200], "...")
+                        text = read_file_content(doc_path)
+                        stemmed_text, steps = stemmer.stem_text(text)
+                        vsm_data = {
+                            'terms': vsm.terms,
+                            'documents': vsm.documents,
+                            'term_doc_freq': vsm.term_doc_freq,
+                            'doc_vectors': vsm.doc_vectors,
+                            'query': query,
+                            'search_results': results
+                        }
+                        export_to_word(text, stemmed_text, steps, doc_path, vsm_data)
+                print("-" * 50)
                 
         except Exception as e:
             print(f"Error processing files: {e}")
