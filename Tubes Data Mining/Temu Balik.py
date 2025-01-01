@@ -532,13 +532,14 @@ if __name__ == "__main__":
                 'doc_vectors': vsm.doc_vectors
             }
             
-            # Process first document for stemming results
-            text = read_file_content(file_paths[0])
-            stemmed_text, steps = stemmer.stem_text(text)
-            
-            # Export results with VSM data
-            output_file = export_to_word(text, stemmed_text, steps, file_paths[0], vsm_data)
-            print(f"\nResults exported to: {output_file}")
+            # Process each document and export results
+            for i, file_path in enumerate(file_paths):
+                text = read_file_content(file_path)
+                stemmed_text, steps = stemmer.stem_text(text)
+                
+                # Export results with VSM data
+                output_file = export_to_word(text, stemmed_text, steps, file_path, vsm_data)
+                print(f"\nResults exported for document {i+1} to: {output_file}")
             
             # Search loop
             while True:
