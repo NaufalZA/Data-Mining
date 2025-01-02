@@ -343,7 +343,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
     output_filename = f"results/Hasil_{original_filename}.docx"
     
     doc = Document()
-    doc.add_heading('Hasil Stemming dan Pemrosesan Teks', 0)
+    doc.add_heading('Hasil Stemming dan Perhitungan Temu Balik', 0)
     
     # Tokenisasi
     tokens = stemmer.tokenize(original_text)
@@ -351,21 +351,15 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
     token_text = ', '.join([t['token'] for t in tokens])
     doc.add_paragraph(token_text)
     
-    # Stopword
-    filtered_tokens = [t for t in tokens if t['token'] not in stemmer.stopwords]
-    doc.add_heading('2. Hasil Penghapusan Kata Henti:', level=1)
-    stopword_text = ', '.join([t['token'] for t in filtered_tokens])
-    doc.add_paragraph(stopword_text)
-    
     # Angka
-    valid_tokens = [t for t in filtered_tokens if not any(c.isdigit() for c in t['token'])]
-    doc.add_heading('3. Hasil Penghapusan Angka:', level=1)
+    valid_tokens = [t for t in tokens if not any(c.isdigit() for c in t['token'])]
+    doc.add_heading('2. Hasil Setelah Removal Stopword dan Angka:', level=1)
     valid_text = ', '.join([t['token'] for t in valid_tokens])
     doc.add_paragraph(valid_text)
     
     # Kamus
     dict_check = [(t['token'], stemmer.check_kamus(t['token'])) for t in valid_tokens]
-    doc.add_heading('4. Hasil Pengecekan Kamus:', level=1)
+    doc.add_heading('3. Hasil Pengecekan Kata Dalam Kamus:', level=1)
     
     total_words = len(dict_check)
     found_words = sum(1 for _, in_dict in dict_check if in_dict)
@@ -378,11 +372,11 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
         p = doc.add_paragraph(style='List Bullet')
         p.text = f"{word}: {'Ada dalam kamus' if in_dict else 'Tidak ada dalam kamus'}"
     
-    doc.add_heading('5. Hasil Akhir Stemming:', level=1)
+    doc.add_heading('4. Hasil Akhir Stemming:', level=1)
     doc.add_paragraph(stemmed_text)
     
     if vsm_data:
-        doc.add_heading('6. Analisis Model Ruang Vektor:', level=1)
+        doc.add_heading('5. Analisis VSM:', level=1)
         
         doc.add_paragraph("Berikut adalah matriks term-dokumen yang menunjukkan frekuensi kemunculan setiap kata pada setiap dokumen:")
         
@@ -402,11 +396,40 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                 freq = vsm_data['term_doc_freq'][term][doc_id]
                 row_cells[doc_id+1].text = str(freq)
 
+        # Tambahkan tabel IDF
+        doc.add_heading('Inverse Document Frequency (IDF):', level=2)
+        idf_table = doc.add_table(rows=1, cols=2)
+        idf_table.style = 'Table Grid'
+        idf_table.rows[0].cells[0].text = 'Term'
+        idf_table.rows[0].cells[1].text = 'IDF'
+        
+        for term in sorted(vsm_data['terms']):
+            row_cells = idf_table.add_row().cells
+            row_cells[0].text = term
+            row_cells[1].text = f"{vsm_data['idf'][term]:.4f}"
+
+        # Tambahkan tabel TF-IDF
+        doc.add_heading('TF-IDF Weights:', level=2)
+        tf_idf_table = doc.add_table(rows=1, cols=len(vsm_data['documents']) + 1)
+        tf_idf_table.style = 'Table Grid'
+        
+        header_cells = tf_idf_table.rows[0].cells
+        header_cells[0].text = 'Term'
+        for i in range(len(vsm_data['documents'])):
+            header_cells[i+1].text = f'Doc {i+1}'
+            
+        for term in sorted(list(vsm_data['terms'])):
+            row_cells = tf_idf_table.add_row().cells
+            row_cells[0].text = term
+            for doc_id in range(len(vsm_data['documents'])):
+                tf_idf = vsm_data['tf_idf_vectors'][doc_id].get(term, 0)
+                row_cells[doc_id+1].text = f"{tf_idf:.4f}"
+
     if vsm_data and 'query' in vsm_data:
-        doc.add_heading('7. Hasil Pencarian dan Perhitungan Kemiripan:', level=1)
+        doc.add_heading('6. Hasil Pencarian dan Perhitungan Similiarity:', level=1)
         doc.add_paragraph(f"Kata Kunci: {vsm_data['query']}")
         
-        doc.add_heading('Analisis Kata Kunci:', level=2)
+        doc.add_heading('Analisis Keyword:', level=2)
         doc.add_paragraph("Frekuensi kemunculan kata pada query setelah preprocessing:")
         
         stemmed_query, _ = stemmer.stem_text(vsm_data['query'])
@@ -434,7 +457,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                 doc_vector = vsm_data['doc_vectors'][result_doc['id']]
                 query_vector = {term: query_terms.count(term) for term in query_terms if term in vsm_data['terms']}
                 
-                doc.add_paragraph("Dot Product Calculation:")
+                doc.add_paragraph("Perhitungan Dot:")
                 dot_products = []
                 dot_product = 0
                 for term in vsm_data['terms']:
@@ -449,7 +472,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                     " + ".join(dot_products) + f" = {dot_product}"
                 ))
                 
-                doc.add_paragraph("\nMagnitude Calculations:")
+                doc.add_paragraph("\nPerhitungan Magnitude :")
                 q_magnitude_parts = []
                 for term, val in query_vector.items():
                     if val > 0:
@@ -471,8 +494,8 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                     doc_magnitude
                 ))
                 
-                doc.add_paragraph(f"\nFinal Similarity Calculation:")
-                doc.add_paragraph("Similarity(D{}, Q) = Dot(D{}, Q) / (|D{}| × |Q|)".format(
+                # doc.add_paragraph(f"\nFinal Similarity Calculation:")
+                doc.add_paragraph("\nSimilarity(D{}, Q) = Dot(D{}, Q) / (|D{}| × |Q|)".format(
                     doc_id, doc_id, doc_id
                 ))
                 doc.add_paragraph("Similarity(D{}, Q) = {} / ({:.4f} × {:.4f})".format(
@@ -482,12 +505,12 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                 
                 doc.add_paragraph("-" * 40)
 
-        doc.add_heading('Peringkat Akhir:', level=2)
+        doc.add_heading('Ranking Documents:', level=2)
         results_table = doc.add_table(rows=1, cols=2)
         results_table.style = 'Table Grid'
         header_cells = results_table.rows[0].cells
-        header_cells[0].text = 'Dokumen'
-        header_cells[1].text = 'Nilai Kemiripan'
+        header_cells[0].text = 'Judul Dokumen'
+        header_cells[1].text = 'Nilai Similiarity'
         
         for result_doc, score in vsm_data['search_results']:
             if score > 0:
@@ -505,6 +528,8 @@ class VSM:
         self.doc_vectors = []
         self.terms = set()
         self.term_doc_freq = defaultdict(lambda: defaultdict(int))
+        self.idf = {}  # Menambahkan variabel untuk menyimpan nilai IDF
+        self.tf_idf_vectors = []  # Menambahkan variabel untuk menyimpan vektor TF-IDF
 
     def add_document(self, doc_id, content):
         
@@ -524,34 +549,54 @@ class VSM:
             self.terms.add(term)
             self.term_doc_freq[term][doc_id] += 1
 
+    def calculate_idf(self):
+        """Menghitung IDF untuk setiap term"""
+        N = len(self.documents)
+        for term in self.terms:
+            df = sum(1 for doc_id in range(N) if self.term_doc_freq[term][doc_id] > 0)
+            self.idf[term] = math.log10(N / df) if df > 0 else 0
+
     def calculate_weights(self):
-        
+        """Menghitung bobot TF-IDF"""
+        self.calculate_idf()  # Hitung IDF terlebih dahulu
         self.doc_vectors = []
+        self.tf_idf_vectors = []
+        
         for doc in self.documents:
             vector = {}
+            tf_idf_vector = {}
             doc_id = doc['id']
+            
             for term in self.terms:
                 tf = self.term_doc_freq[term][doc_id]
                 if tf > 0:
+                    # Logarithmic TF
+                    weighted_tf = 1 + math.log10(tf)
+                    vector[term] = tf  # Simpan TF asli
+                    tf_idf_vector[term] = weighted_tf * self.idf[term]  # Hitung TF-IDF
                     
-                    vector[term] = tf
             self.doc_vectors.append(vector)
+            self.tf_idf_vectors.append(tf_idf_vector)
 
     def search(self, query):
         
         stemmed_query, _ = self.stemmer.stem_text(query)
         query_terms = stemmed_query.split()
 
-        
+        # Hitung TF-IDF untuk query
         query_vector = {}
+        query_tf_idf = {}
         for term in query_terms:
             if term in self.terms:
-                query_vector[term] = query_terms.count(term)
+                tf = query_terms.count(term)
+                query_vector[term] = tf
+                weighted_tf = 1 + math.log10(tf)
+                query_tf_idf[term] = weighted_tf * self.idf.get(term, 0)
 
         
         results = []
-        for i, doc_vector in enumerate(self.doc_vectors):
-            similarity = self.cosine_similarity(query_vector, doc_vector)
+        for i, doc_vector in enumerate(self.tf_idf_vectors):
+            similarity = self.cosine_similarity(query_tf_idf, doc_vector)
             results.append((self.documents[i], similarity))
 
         
@@ -627,6 +672,8 @@ if __name__ == "__main__":
                             'documents': vsm.documents,
                             'term_doc_freq': vsm.term_doc_freq,
                             'doc_vectors': vsm.doc_vectors,
+                            'tf_idf_vectors': vsm.tf_idf_vectors,  # Tambahkan ini
+                            'idf': vsm.idf,  # Tambahkan ini
                             'query': query,
                             'search_results': results
                         }
