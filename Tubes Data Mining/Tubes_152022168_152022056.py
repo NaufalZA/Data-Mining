@@ -57,11 +57,11 @@ class Stemmer:
         return word.lower() in self.kamus
 
     def remove_inflection_suffixes(self, word):
-        # Remove -lah, -kah, -tah, -pun
+        
         if word.endswith(('lah', 'kah', 'tah', 'pun')):
             word = re.sub(r'(lah|kah|tah|pun)$', '', word)
             
-        # Remove -ku, -mu, -nya
+        
         if word.endswith(('ku', 'mu', 'nya')):
             word = re.sub(r'(ku|mu|nya)$', '', word)
             
@@ -71,24 +71,24 @@ class Stemmer:
         if word.endswith(('i', 'an', 'kan')):
             original = word
             
-            # Remove -i, -an, or -kan
+            
             if word.endswith('kan'):
                 word = word[:-3]
             elif word.endswith(('i', 'an')):
                 word = word[:-2]
 
-            # Special case for -an where last letter is k
+            
             if original.endswith('an') and word.endswith('k'):
                 word = word[:-1]
                 if self.check_kamus(word):
                     return word
                 word = word + 'k'
 
-            # Check if result exists in dictionary
+            
             if self.check_kamus(word):
                 return word
                 
-            # If not found, restore the original suffix
+            
             return original
             
         return word
@@ -105,9 +105,9 @@ class Stemmer:
 
     def remove_prefix(self, word, iteration=1):
         if iteration > 3:
-            return word, None  # Return None as prefix type if max iterations reached
+            return word, None  
 
-        # Track previous prefix for comparisons
+        
         previous_prefix = None if iteration == 1 else self.get_prefix_type(word)
 
         if word[:2] in ['di', 'ke', 'se']:
@@ -136,20 +136,20 @@ class Stemmer:
         else:
             return word, None
 
-        # Stop if same prefix is found twice
+        
         if previous_prefix == prefix_type:
             return word, None
 
-        # Check dictionary
+        
         if self.check_kamus(stemmed):
             return stemmed, prefix_type
 
-        # Try recoding for certain prefixes
+        
         recoded = self.recode_prefix(prefix, stemmed)
         if recoded != stemmed and self.check_kamus(recoded):
             return recoded, prefix_type
             
-        # Try next iteration
+        
         next_word, next_prefix = self.remove_prefix(word, iteration + 1)
         return next_word, next_prefix or prefix_type
 
@@ -157,11 +157,11 @@ class Stemmer:
         """Handle special recoding cases"""
         if prefix in ['me', 'pe']:
             if word.startswith('ng'):
-                return word[2:]  # ng -> ''
+                return word[2:]  
             elif word.startswith('ny'):
-                return 's' + word[2:]  # ny -> s
+                return 's' + word[2:]  
             elif word.startswith('n'):
-                return 't' + word[1:]  # n -> t
+                return 't' + word[1:]  
         return word
 
     def stem_word(self, word):
@@ -169,7 +169,7 @@ class Stemmer:
         if not self.is_valid_word(word):
             return word, steps
             
-        # Step 1: Check in dictionary
+        
         steps.append(f"Step 1: Checking '{word}' in dictionary")
         if self.check_kamus(word):
             steps.append("Result: Found in dictionary")
@@ -179,14 +179,14 @@ class Stemmer:
         suffix_removed = False
         prefix_type = None
 
-        # Step 2: Remove inflection suffixes with detailed tracking
+        
         steps.append("Step 2: Checking inflection suffixes")
         if any(word.endswith(suffix) for suffix in ['lah', 'kah', 'tah', 'pun', 'ku', 'mu', 'nya']):
             old_word = word
             word = self.remove_inflection_suffixes(word)
             steps.append(f"Removed inflection suffix: {old_word} → {word}")
 
-        # Step 3: Remove derivation suffixes
+        
         steps.append(f"Step 3: Checking derivation suffixes for '{word}'")
         if any(word.endswith(suffix) for suffix in ['i', 'an', 'kan']):
             temp_word = word
@@ -218,7 +218,7 @@ class Stemmer:
             word = temp_word
             steps.append("Restored original: suffix removal unsuccessful")
 
-        # Step 4: Prefix removal with better tracking
+        
         if suffix_removed:
             steps.append("Step 4a: Checking prefix-suffix combinations")
             prefix = self.get_prefix_type(word)
@@ -231,7 +231,7 @@ class Stemmer:
         if prefix_type:
             steps.append(f"Removed prefix type: {prefix_type}")
 
-        # Step 5: Recoding (if needed)
+        
         if prefix_type:
             steps.append("Step 5: Checking recoding rules")
             recoded = self.recode_prefix(prefix_type.rstrip('-'), word)
@@ -239,7 +239,7 @@ class Stemmer:
                 steps.append(f"Applied recoding: {word} → {recoded}")
                 word = recoded
 
-        # Step 6: Return original word if no root found
+        
         steps.append("Step 6: No root word found, returning original word")
         return original_word, steps
 
@@ -257,31 +257,31 @@ class Stemmer:
         Tokenize text into words while handling punctuation and special cases.
         Returns list of tokens and their positions.
         """
-        # Convert to lowercase
+        
         text = text.lower()
         
-        # Replace newlines and special characters with spaces
+        
         text = text.replace('\n', ' ')
         text = text.replace('\t', ' ')
         text = text.replace('\r', ' ')
         
-        # Handle punctuation and special characters
+        
         for p in self.punctuation:
             text = text.replace(p, ' ')
             
-        # Remove zero-width spaces and other invisible characters
+        
         text = re.sub(r'[\u200b\u200c\u200d\ufeff\xa0]', ' ', text)
         
-        # Remove extra whitespace
+        
         text = ' '.join(text.split())
         
-        # Create tokens with positions
+        
         words = text.split()
         tokens = []
         position = 0
         
         for word in words:
-            # Skip empty strings, purely numeric tokens, and single characters
+            
             if (word and 
                 not word.isnumeric() and 
                 len(word) > 1 and 
@@ -296,21 +296,21 @@ class Stemmer:
         return tokens
 
     def stem_text(self, text):
-        # First tokenize the text
+        
         tokens = self.tokenize(text)
         
-        # Remove stopwords
+        
         tokens = [t for t in tokens if t['token'] not in self.stopwords]
         
         results = []
         all_steps = []
         
-        # Process each token
+        
         for token in tokens:
             stemmed_word, steps = self.stem_word(token['token'])
             token['stemmed'] = stemmed_word
             results.append(stemmed_word)
-            if token['token'] != stemmed_word:  # Only track changes
+            if token['token'] != stemmed_word:  
                 all_steps.append((token['original'], stemmed_word, steps))
             
         return ' '.join(results), all_steps
@@ -340,111 +340,161 @@ def read_file_content(file_path):
 
 def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data=None):
     original_filename = os.path.splitext(os.path.basename(input_file_path))[0]
-    output_filename = f"results/Stemmed_{original_filename}.docx"
+    output_filename = f"results/Hasil_{original_filename}.docx"
     
     doc = Document()
-    doc.add_heading('Stemming and VSM Results', 0)
+    doc.add_heading('Hasil Stemming dan Pemrosesan Teks', 0)
     
-    # Show tokenization results
+    # Tokenisasi
     tokens = stemmer.tokenize(original_text)
-    doc.add_heading('1. After Tokenization:', level=1)
+    doc.add_heading('1. Hasil Tokenisasi:', level=1)
     token_text = ', '.join([t['token'] for t in tokens])
     doc.add_paragraph(token_text)
     
-    # Show after stopword removal
+    # Stopword
     filtered_tokens = [t for t in tokens if t['token'] not in stemmer.stopwords]
-    doc.add_heading('2. After Stopword Removal:', level=1)
+    doc.add_heading('2. Hasil Penghapusan Kata Henti:', level=1)
     stopword_text = ', '.join([t['token'] for t in filtered_tokens])
     doc.add_paragraph(stopword_text)
     
-    # Show after number removal
+    # Angka
     valid_tokens = [t for t in filtered_tokens if not any(c.isdigit() for c in t['token'])]
-    doc.add_heading('3. After Number Removal:', level=1)
+    doc.add_heading('3. Hasil Penghapusan Angka:', level=1)
     valid_text = ', '.join([t['token'] for t in valid_tokens])
     doc.add_paragraph(valid_text)
     
-    # Show words found in dictionary with counts
+    # Kamus
     dict_check = [(t['token'], stemmer.check_kamus(t['token'])) for t in valid_tokens]
-    doc.add_heading('4. Dictionary Check:', level=1)
+    doc.add_heading('4. Hasil Pengecekan Kamus:', level=1)
     
-    # Count total words and found root words
     total_words = len(dict_check)
     found_words = sum(1 for _, in_dict in dict_check if in_dict)
     
-    # Add summary paragraph
     summary = doc.add_paragraph()
-    summary.add_run(f"Total words: {total_words}\n").bold = True
-    summary.add_run(f"Root words found in dictionary: {found_words}\n").bold = True
+    summary.add_run(f"Total kata: {total_words}\n").bold = True
+    summary.add_run(f"Kata dasar dalam kamus: {found_words}\n").bold = True
     
-    # List all words and their status
     for word, in_dict in dict_check:
         p = doc.add_paragraph(style='List Bullet')
-        p.text = f"{word}: {'Found in dictionary' if in_dict else 'Not found'}"
+        p.text = f"{word}: {'Ada dalam kamus' if in_dict else 'Tidak ada dalam kamus'}"
     
-    # Show final stemmed text
-    doc.add_heading('5. Final Stemmed Text:', level=1)
+    doc.add_heading('5. Hasil Akhir Stemming:', level=1)
     doc.add_paragraph(stemmed_text)
     
-    # Add VSM calculations if available
     if vsm_data:
-        doc.add_heading('6. Vector Space Model Calculations (TF Only):', level=1)
+        doc.add_heading('6. Analisis Model Ruang Vektor:', level=1)
         
-        # Document Term Matrix
-        doc.add_heading('Term-Document Matrix (Term Frequencies):', level=2)
+        doc.add_paragraph("Berikut adalah matriks term-dokumen yang menunjukkan frekuensi kemunculan setiap kata pada setiap dokumen:")
+        
         terms = sorted(list(vsm_data['terms']))
-        
-        # Create table for term frequencies
         table = doc.add_table(rows=1, cols=len(vsm_data['documents']) + 1)
         table.style = 'Table Grid'
         
-        # Header row
         header_cells = table.rows[0].cells
         header_cells[0].text = 'Term'
         for i in range(len(vsm_data['documents'])):
             header_cells[i+1].text = f'Doc {i+1}'
             
-        # Add term frequencies
         for term in terms:
             row_cells = table.add_row().cells
             row_cells[0].text = term
             for doc_id in range(len(vsm_data['documents'])):
                 freq = vsm_data['term_doc_freq'][term][doc_id]
                 row_cells[doc_id+1].text = str(freq)
-            
-        # Document Vectors
-        doc.add_heading('Term Frequency Vectors:', level=2)
-        for i, doc_vector in enumerate(vsm_data['doc_vectors']):
-            doc.add_paragraph(f'Document {i+1}:')
-            vector_table = doc.add_table(rows=1, cols=2)
-            vector_table.style = 'Table Grid'
-            header_cells = vector_table.rows[0].cells
-            header_cells[0].text = 'Term'
-            header_cells[1].text = 'TF Weight'
-            
-            for term in terms:
-                if term in doc_vector:
-                    row_cells = vector_table.add_row().cells
-                    row_cells[0].text = term
-                    row_cells[1].text = str(doc_vector[term])
 
     if vsm_data and 'query' in vsm_data:
-        # Add search results section
-        doc.add_heading('7. Search Results:', level=1)
-        doc.add_paragraph(f"Query: {vsm_data['query']}")
+        doc.add_heading('7. Hasil Pencarian dan Perhitungan Kemiripan:', level=1)
+        doc.add_paragraph(f"Kata Kunci: {vsm_data['query']}")
         
-        # Add search results table
+        doc.add_heading('Analisis Kata Kunci:', level=2)
+        doc.add_paragraph("Frekuensi kemunculan kata pada query setelah preprocessing:")
+        
+        stemmed_query, _ = stemmer.stem_text(vsm_data['query'])
+        query_terms = stemmed_query.split()
+        query_vector = {}
+        for term in query_terms:
+            if term in vsm_data['terms']:
+                query_vector[term] = query_terms.count(term)
+                
+        query_table = doc.add_table(rows=1, cols=2)
+        query_table.style = 'Table Grid'
+        query_table.rows[0].cells[0].text = 'Term'
+        query_table.rows[0].cells[1].text = 'Frequency'
+        for term, freq in query_vector.items():
+            row = query_table.add_row()
+            row.cells[0].text = term
+            row.cells[1].text = str(freq)
+            
+        doc.add_heading('Perhitungan Kemiripan:', level=2)
+        for i, (result_doc, score) in enumerate(vsm_data['search_results']):
+            if score > 0:
+                doc_id = result_doc['id'] + 1
+                doc.add_paragraph(f"\nSimilarity (D{doc_id}, Q) = cos(D{doc_id}, Q)")
+                
+                doc_vector = vsm_data['doc_vectors'][result_doc['id']]
+                query_vector = {term: query_terms.count(term) for term in query_terms if term in vsm_data['terms']}
+                
+                doc.add_paragraph("Dot Product Calculation:")
+                dot_products = []
+                dot_product = 0
+                for term in vsm_data['terms']:
+                    q_val = query_vector.get(term, 0)
+                    d_val = doc_vector.get(term, 0)
+                    if q_val > 0 or d_val > 0:
+                        dot_products.append(f"({q_val} × {d_val})")
+                        dot_product += q_val * d_val
+                
+                doc.add_paragraph("Dot(D{}, Q) = {}".format(
+                    doc_id,
+                    " + ".join(dot_products) + f" = {dot_product}"
+                ))
+                
+                doc.add_paragraph("\nMagnitude Calculations:")
+                q_magnitude_parts = []
+                for term, val in query_vector.items():
+                    if val > 0:
+                        q_magnitude_parts.append(f"{val}²")
+                query_magnitude = math.sqrt(sum(v * v for v in query_vector.values()))
+                doc.add_paragraph("|Q| = √({}) = {:.4f}".format(
+                    " + ".join(q_magnitude_parts),
+                    query_magnitude
+                ))
+                
+                d_magnitude_parts = []
+                for term, val in doc_vector.items():
+                    if val > 0:
+                        d_magnitude_parts.append(f"{val}²")
+                doc_magnitude = math.sqrt(sum(v * v for v in doc_vector.values()))
+                doc.add_paragraph("|D{}| = √({}) = {:.4f}".format(
+                    doc_id,
+                    " + ".join(d_magnitude_parts),
+                    doc_magnitude
+                ))
+                
+                doc.add_paragraph(f"\nFinal Similarity Calculation:")
+                doc.add_paragraph("Similarity(D{}, Q) = Dot(D{}, Q) / (|D{}| × |Q|)".format(
+                    doc_id, doc_id, doc_id
+                ))
+                doc.add_paragraph("Similarity(D{}, Q) = {} / ({:.4f} × {:.4f})".format(
+                    doc_id, dot_product, doc_magnitude, query_magnitude
+                ))
+                doc.add_paragraph(f"Similarity(D{doc_id}, Q) = {score:.4f}")
+                
+                doc.add_paragraph("-" * 40)
+
+        doc.add_heading('Peringkat Akhir:', level=2)
         results_table = doc.add_table(rows=1, cols=2)
         results_table.style = 'Table Grid'
         header_cells = results_table.rows[0].cells
-        header_cells[0].text = 'Document'
-        header_cells[1].text = 'Similarity Score'
+        header_cells[0].text = 'Dokumen'
+        header_cells[1].text = 'Nilai Kemiripan'
         
         for result_doc, score in vsm_data['search_results']:
             if score > 0:
                 row_cells = results_table.add_row().cells
                 row_cells[0].text = os.path.basename(file_paths[result_doc['id']])
                 row_cells[1].text = f"{score:.4f}"
-    
+
     doc.save(output_filename)
     return output_filename
 
@@ -457,11 +507,11 @@ class VSM:
         self.term_doc_freq = defaultdict(lambda: defaultdict(int))
 
     def add_document(self, doc_id, content):
-        # Stem the document content
+        
         stemmed_text, _ = self.stemmer.stem_text(content)
         tokens = stemmed_text.split()
         
-        # Store document
+        
         self.documents.append({
             'id': doc_id,
             'content': content,
@@ -469,13 +519,13 @@ class VSM:
             'tokens': tokens
         })
         
-        # Update term frequencies
+        
         for term in tokens:
             self.terms.add(term)
             self.term_doc_freq[term][doc_id] += 1
 
     def calculate_weights(self):
-        # Calculate TF vectors for each document (without IDF)
+        
         self.doc_vectors = []
         for doc in self.documents:
             vector = {}
@@ -483,28 +533,28 @@ class VSM:
             for term in self.terms:
                 tf = self.term_doc_freq[term][doc_id]
                 if tf > 0:
-                    # Using raw term frequency
+                    
                     vector[term] = tf
             self.doc_vectors.append(vector)
 
     def search(self, query):
-        # Stem the query
+        
         stemmed_query, _ = self.stemmer.stem_text(query)
         query_terms = stemmed_query.split()
 
-        # Create query vector using TF only
+        
         query_vector = {}
         for term in query_terms:
             if term in self.terms:
                 query_vector[term] = query_terms.count(term)
 
-        # Calculate similarities
+        
         results = []
         for i, doc_vector in enumerate(self.doc_vectors):
             similarity = self.cosine_similarity(query_vector, doc_vector)
             results.append((self.documents[i], similarity))
 
-        # Sort by similarity score
+        
         results.sort(key=lambda x: x[1], reverse=True)
         return results
 
@@ -522,7 +572,7 @@ class VSM:
             
         return dot_product / (norm1 * norm2)
 
-# Modify the main section to include VSM functionality
+
 if __name__ == "__main__":
     stemmer = Stemmer()
     vsm = VSM(stemmer)
@@ -543,33 +593,32 @@ if __name__ == "__main__":
     
     if file_paths:
         try:
-            # Process all selected documents
-            print("\nLoading documents...")
+            
             for i, file_path in enumerate(file_paths):
                 text = read_file_content(file_path)
                 vsm.add_document(i, text)
-                print(f"Loaded document {i+1}: {os.path.basename(file_path)}")
+                print(f"Dokumen {i+1}: {os.path.basename(file_path)}")
             
-            # Calculate document vectors
+            
             vsm.calculate_weights()
             
-            # Search loop
+            
             while True:
-                query = input("\nEnter search query (or 'quit' to exit): ")
-                if query.lower() == 'quit':
+                query = input("\nMasukkan kata kunci pencarian (ketik 'keluar' untuk berhenti): ")
+                if query.lower() == 'keluar':
                     break
                 
                 results = vsm.search(query)
-                print("\nSearch Results:")
+                print("\nHasil Pencarian:")
                 print("-" * 50)
                 
-                # Show all documents with their scores
+                
                 for doc, score in results:
                     doc_path = file_paths[doc['id']]
-                    print(f"Document {doc['id'] + 1}: {os.path.basename(doc_path)}")
-                    print(f"Similarity Score: {score:.4f}\n")
+                    print(f"Dokumen {doc['id'] + 1}: {os.path.basename(doc_path)}")
+                    print(f"Nilai Kemiripan: {score:.4f}\n")
                     
-                    # Process and export documents with matches silently
+                    
                     if score > 0:
                         text = read_file_content(doc_path)
                         stemmed_text, steps = stemmer.stem_text(text)
@@ -585,6 +634,6 @@ if __name__ == "__main__":
                 print("-" * 50)
                 
         except Exception as e:
-            print(f"Error processing files: {e}")
+            print(f"Terjadi kesalahan: {e}")
     else:
-        print("No files selected")
+        print("Tidak ada file yang dipilih")
