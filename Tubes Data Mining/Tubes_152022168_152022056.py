@@ -371,9 +371,17 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
     summary.add_run(f"Total kata: {total_words}\n").bold = True
     summary.add_run(f"Kata dasar dalam kamus: {found_words}\n").bold = True
     
+    # Create table for dictionary check
+    dict_table = doc.add_table(rows=1, cols=2)
+    dict_table.style = 'Table Grid'
+    header_cells = dict_table.rows[0].cells
+    header_cells[0].text = 'Kata'
+    header_cells[1].text = 'Status Kamus'
+    
     for word, in_dict in dict_check:
-        p = doc.add_paragraph(style='List Bullet')
-        p.text = f"{word}: {'Ada dalam kamus' if in_dict else 'Tidak ada dalam kamus'}"
+        row_cells = dict_table.add_row().cells
+        row_cells[0].text = word
+        row_cells[1].text = 'Ada' if in_dict else 'Tidak ada'
     
     doc.add_heading('4. Hasil Akhir Stemming:', level=1)
     doc.add_paragraph(stemmed_text)
