@@ -26702,7 +26702,6 @@ tiarap
 tib 
 tiba 
 tiban 
-tidak 
 tidur 
 tifa 
 tifus 
@@ -28338,8 +28337,6 @@ xilol
 xilologi 
 xilonit 
 xilosa 
-Y 
-ya 
 yad 
 yahud 
 Yahudi 

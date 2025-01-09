@@ -353,15 +353,16 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
     token_text = ', '.join([t['token'] for t in tokens])
     doc.add_paragraph(token_text)
     
-    # Ubah judul karena tidak lagi menghapus angka
+    # Update stopword removal section
     doc.add_heading('2. Hasil Setelah Removal Stopword:', level=1)
-    valid_tokens = [t for t in tokens]
-    valid_text = ', '.join([t['token'] for t in valid_tokens])
-    doc.add_paragraph(valid_text)
+    # Filter out stopwords
+    tokens_without_stopwords = [t for t in tokens if t['token'] not in stemmer.stopwords]
+    stopword_text = ', '.join([t['token'] for t in tokens_without_stopwords])
+    doc.add_paragraph(stopword_text)
     
-    # Kamus
-    dict_check = [(t['token'], stemmer.check_kamus(t['token'])) for t in valid_tokens]
+    # Kamus - use tokens_without_stopwords instead of valid_tokens
     doc.add_heading('3. Hasil Pengecekan Kata Dalam Kamus:', level=1)
+    dict_check = [(t['token'], stemmer.check_kamus(t['token'])) for t in tokens_without_stopwords]
     
     total_words = len(dict_check)
     found_words = sum(1 for _, in_dict in dict_check if in_dict)
