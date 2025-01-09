@@ -554,11 +554,12 @@ class VSM:
         N = len(self.documents)
         for term in self.terms:
             df = sum(1 for doc_id in range(N) if self.term_doc_freq[term][doc_id] > 0)
-            self.idf[term] = math.log10(N / df) if df > 0 else 0
+            # Add 1 to prevent log(1) = 0, this is called "smooth IDF"
+            self.idf[term] = math.log10((N + 1) / (df + 1)) + 1
 
     def calculate_weights(self):
         """Menghitung bobot TF-IDF"""
-        self.calculate_idf()  # Hitung IDF terlebih dahulu
+        self.calculate_idf()
         self.doc_vectors = []
         self.tf_idf_vectors = []
         
@@ -570,10 +571,10 @@ class VSM:
             for term in self.terms:
                 tf = self.term_doc_freq[term][doc_id]
                 if tf > 0:
-                    # Logarithmic TF
-                    weighted_tf = 1 + math.log10(tf)
-                    vector[term] = tf  # Simpan TF asli
-                    tf_idf_vector[term] = weighted_tf * self.idf[term]  # Hitung TF-IDF
+                    # Use raw TF instead of log TF for better results with small documents
+                    weighted_tf = tf
+                    vector[term] = tf
+                    tf_idf_vector[term] = weighted_tf * self.idf[term]
                     
             self.doc_vectors.append(vector)
             self.tf_idf_vectors.append(tf_idf_vector)
@@ -590,8 +591,8 @@ class VSM:
             if term in self.terms:
                 tf = query_terms.count(term)
                 query_vector[term] = tf
-                weighted_tf = 1 + math.log10(tf)
-                query_tf_idf[term] = weighted_tf * self.idf.get(term, 0)
+                # Use raw TF for query as well
+                query_tf_idf[term] = tf * self.idf.get(term, 0)
 
         
         results = []
