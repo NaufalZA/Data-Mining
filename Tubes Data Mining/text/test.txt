@@ -1,1 +1,1 @@
-ya tidak stemming
+ya tidak stemming kesamaan dihitung diambil indexnya
