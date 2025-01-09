@@ -70,27 +70,20 @@ class Stemmer:
     def remove_derivation_suffixes(self, word):
         if word.endswith(('i', 'an', 'kan')):
             original = word
-            
-            
             if word.endswith('kan'):
                 word = word[:-3]
             elif word.endswith(('i', 'an')):
                 word = word[:-2]
 
-            
             if original.endswith('an') and word.endswith('k'):
                 word = word[:-1]
                 if self.check_kamus(word):
                     return word
                 word = word + 'k'
 
-            
             if self.check_kamus(word):
                 return word
-                
-            
             return original
-            
         return word
 
     def is_forbidden_combination(self, prefix, suffix):
@@ -107,24 +100,20 @@ class Stemmer:
         if iteration > 3:
             return word, None  
 
-        
         previous_prefix = None if iteration == 1 else self.get_prefix_type(word)
 
         if word[:2] in ['di', 'ke', 'se']:
             prefix = word[:2]
             stemmed = word[2:]
             prefix_type = self.prefix_types[prefix]
-            
         elif word.startswith('ter'):
             prefix = 'ter'
             stemmed = word[3:]
             prefix_type = 'ter-'
-            
         elif word.startswith('te'):
             prefix = 'te'
             stemmed = word[2:]
             prefix_type = 'te-'
-            
         elif word.startswith(('me', 'pe', 'be')):
             if len(word) > 3 and word[2] == 'r' and word[3] in 'aiueo':
                 prefix = word[:3]
@@ -136,20 +125,16 @@ class Stemmer:
         else:
             return word, None
 
-        
         if previous_prefix == prefix_type:
             return word, None
 
-        
         if self.check_kamus(stemmed):
             return stemmed, prefix_type
 
-        
         recoded = self.recode_prefix(prefix, stemmed)
         if recoded != stemmed and self.check_kamus(recoded):
             return recoded, prefix_type
-            
-        
+
         next_word, next_prefix = self.remove_prefix(word, iteration + 1)
         return next_word, next_prefix or prefix_type
 
@@ -168,8 +153,7 @@ class Stemmer:
         steps = []
         if not self.is_valid_word(word):
             return word, steps
-            
-        
+
         steps.append(f"Step 1: Checking '{word}' in dictionary")
         if self.check_kamus(word):
             steps.append("Result: Found in dictionary")
@@ -179,14 +163,12 @@ class Stemmer:
         suffix_removed = False
         prefix_type = None
 
-        
         steps.append("Step 2: Checking inflection suffixes")
         if any(word.endswith(suffix) for suffix in ['lah', 'kah', 'tah', 'pun', 'ku', 'mu', 'nya']):
             old_word = word
             word = self.remove_inflection_suffixes(word)
             steps.append(f"Removed inflection suffix: {old_word} → {word}")
 
-        
         steps.append(f"Step 3: Checking derivation suffixes for '{word}'")
         if any(word.endswith(suffix) for suffix in ['i', 'an', 'kan']):
             temp_word = word
@@ -202,7 +184,7 @@ class Stemmer:
                 word = word[:-2]
                 suffix_removed = 'an'
                 steps.append(f"Removed -an: '{temp_word}' → '{word}'")
-                
+
                 if word.endswith('k'):
                     k_word = word[:-1]
                     steps.append(f"Checking k-removal: '{word}' → '{k_word}'")
@@ -218,20 +200,18 @@ class Stemmer:
             word = temp_word
             steps.append("Restored original: suffix removal unsuccessful")
 
-        
         if suffix_removed:
             steps.append("Step 4a: Checking prefix-suffix combinations")
             prefix = self.get_prefix_type(word)
             if prefix and suffix_removed in self.forbidden_combinations.get(prefix, []):
                 steps.append(f"Found forbidden combination: {prefix}- with -{suffix_removed}")
                 return original_word, steps
-        
+
         steps.append("Step 4b: Removing prefixes")
         word, prefix_type = self.remove_prefix(word)
         if prefix_type:
             steps.append(f"Removed prefix type: {prefix_type}")
 
-        
         if prefix_type:
             steps.append("Step 5: Checking recoding rules")
             recoded = self.recode_prefix(prefix_type.rstrip('-'), word)
@@ -239,7 +219,6 @@ class Stemmer:
                 steps.append(f"Applied recoding: {word} → {recoded}")
                 word = recoded
 
-        
         steps.append("Step 6: No root word found, returning original word")
         return original_word, steps
 
@@ -257,31 +236,18 @@ class Stemmer:
         Tokenize text into words while handling punctuation and special cases.
         Returns list of tokens and their positions.
         """
-        
         text = text.lower()
-        
-        
         text = text.replace('\n', ' ')
         text = text.replace('\t', ' ')
         text = text.replace('\r', ' ')
-        
-        
         for p in self.punctuation:
             text = text.replace(p, ' ')
-            
-        
         text = re.sub(r'[\u200b\u200c\u200d\ufeff\xa0]', ' ', text)
-        
-        
         text = ' '.join(text.split())
-        
-        
         words = text.split()
         tokens = []
         position = 0
-        
         for word in words:
-            
             if (word and 
                 self.is_valid_word(word)):
                 tokens.append({
@@ -290,27 +256,19 @@ class Stemmer:
                     'original': word
                 })
             position += 1
-            
         return tokens
 
     def stem_text(self, text):
-        
         tokens = self.tokenize(text)
-        
-        
         tokens = [t for t in tokens if t['token'] not in self.stopwords]
-        
         results = []
         all_steps = []
-        
-        
         for token in tokens:
             stemmed_word, steps = self.stem_word(token['token'])
             token['stemmed'] = stemmed_word
             results.append(stemmed_word)
             if token['token'] != stemmed_word:  
                 all_steps.append((token['original'], stemmed_word, steps))
-            
         return ' '.join(results), all_steps
 
 def read_file_content(file_path):
