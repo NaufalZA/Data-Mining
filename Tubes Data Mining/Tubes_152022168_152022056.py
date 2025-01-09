@@ -638,15 +638,14 @@ if __name__ == "__main__":
     
     if file_paths:
         try:
-            
+            # Load documents
             for i, file_path in enumerate(file_paths):
                 text = read_file_content(file_path)
                 vsm.add_document(i, text)
                 print(f"Dokumen {i+1}: {os.path.basename(file_path)}")
             
-            
+            # Calculate weights
             vsm.calculate_weights()
-            
             
             while True:
                 query = input("\nMasukkan kata kunci pencarian (ketik 'keluar' untuk berhenti): ")
@@ -657,27 +656,26 @@ if __name__ == "__main__":
                 print("\nHasil Pencarian:")
                 print("-" * 50)
                 
-                
-                for doc, score in results:
-                    doc_path = file_paths[doc['id']]
-                    print(f"Dokumen {doc['id'] + 1}: {os.path.basename(doc_path)}")
+                # Export results for all documents
+                for doc_id in range(len(file_paths)):
+                    doc_path = file_paths[doc_id]
+                    score = next((score for doc, score in results if doc['id'] == doc_id), 0)
+                    print(f"Dokumen {doc_id + 1}: {os.path.basename(doc_path)}")
                     print(f"Nilai Kemiripan: {score:.4f}\n")
                     
-                    
-                    if score > 0:
-                        text = read_file_content(doc_path)
-                        stemmed_text, steps = stemmer.stem_text(text)
-                        vsm_data = {
-                            'terms': vsm.terms,
-                            'documents': vsm.documents,
-                            'term_doc_freq': vsm.term_doc_freq,
-                            'doc_vectors': vsm.doc_vectors,
-                            'tf_idf_vectors': vsm.tf_idf_vectors,  # Tambahkan ini
-                            'idf': vsm.idf,  # Tambahkan ini
-                            'query': query,
-                            'search_results': results
-                        }
-                        export_to_word(text, stemmed_text, steps, doc_path, vsm_data)
+                    text = read_file_content(doc_path)
+                    stemmed_text, steps = stemmer.stem_text(text)
+                    vsm_data = {
+                        'terms': vsm.terms,
+                        'documents': vsm.documents,
+                        'term_doc_freq': vsm.term_doc_freq,
+                        'doc_vectors': vsm.doc_vectors,
+                        'tf_idf_vectors': vsm.tf_idf_vectors,
+                        'idf': vsm.idf,
+                        'query': query,
+                        'search_results': results
+                    }
+                    export_to_word(text, stemmed_text, steps, doc_path, vsm_data)
                 print("-" * 50)
                 
         except Exception as e:
