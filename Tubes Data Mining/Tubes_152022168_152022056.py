@@ -283,8 +283,6 @@ class Stemmer:
         for word in words:
             
             if (word and 
-                not word.isnumeric() and 
-                len(word) > 1 and 
                 self.is_valid_word(word)):
                 tokens.append({
                     'token': word,
@@ -345,15 +343,19 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
     doc = Document()
     doc.add_heading('Hasil Stemming dan Perhitungan Temu Balik', 0)
     
+    # Menambahkan original text
+    doc.add_heading('Original Text:', level=1)
+    doc.add_paragraph(original_text)
+    
     # Tokenisasi
     tokens = stemmer.tokenize(original_text)
     doc.add_heading('1. Hasil Tokenisasi:', level=1)
     token_text = ', '.join([t['token'] for t in tokens])
     doc.add_paragraph(token_text)
     
-    # Angka
-    valid_tokens = [t for t in tokens if not any(c.isdigit() for c in t['token'])]
-    doc.add_heading('2. Hasil Setelah Removal Stopword dan Angka:', level=1)
+    # Ubah judul karena tidak lagi menghapus angka
+    doc.add_heading('2. Hasil Setelah Removal Stopword:', level=1)
+    valid_tokens = [t for t in tokens]
     valid_text = ', '.join([t['token'] for t in valid_tokens])
     doc.add_paragraph(valid_text)
     
