@@ -409,7 +409,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
         for term in sorted(vsm_data['terms']):
             row_cells = idf_table.add_row().cells
             row_cells[0].text = term
-            row_cells[1].text = f"{vsm_data['idf'][term]:.4f}"
+            row_cells[1].text = f"{vsm_data['idf'][term]:.2f}".replace('.', ',')
 
         # Tambahkan tabel TF-IDF
         doc.add_heading('TF-IDF Weights:', level=2)
@@ -426,7 +426,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
             row_cells[0].text = term
             for doc_id in range(len(vsm_data['documents'])):
                 tf_idf = vsm_data['tf_idf_vectors'][doc_id].get(term, 0)
-                row_cells[doc_id+1].text = f"{tf_idf:.4f}"
+                row_cells[doc_id+1].text = f"{tf_idf:.2f}".replace('.', ',')
 
     if vsm_data and 'query' in vsm_data:
         doc.add_heading('6. Hasil Pencarian dan Perhitungan Similiarity:', level=1)
@@ -451,7 +451,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
             row.cells[0].text = term
             row.cells[1].text = str(freq)
             
-        doc.add_heading('Perhitungan Kemiripan:', level=2)
+        doc.add_heading('Perhitungan Similiarity:', level=2)
         for i, (result_doc, score) in enumerate(vsm_data['search_results']):
             if score > 0:
                 doc_id = result_doc['id'] + 1
@@ -481,30 +481,31 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                     if val > 0:
                         q_magnitude_parts.append(f"{val}²")
                 query_magnitude = math.sqrt(sum(v * v for v in query_vector.values()))
-                doc.add_paragraph("|Q| = √({}) = {:.4f}".format(
+                doc.add_paragraph("|Q| = √({}) = {:.2f}".format(
                     " + ".join(q_magnitude_parts),
                     query_magnitude
-                ))
+                ).replace('.', ','))
                 
                 d_magnitude_parts = []
                 for term, val in doc_vector.items():
                     if val > 0:
                         d_magnitude_parts.append(f"{val}²")
                 doc_magnitude = math.sqrt(sum(v * v for v in doc_vector.values()))
-                doc.add_paragraph("|D{}| = √({}) = {:.4f}".format(
+                doc.add_paragraph("|D{}| = √({}) = {:.2f}".format(
                     doc_id,
                     " + ".join(d_magnitude_parts),
                     doc_magnitude
-                ))
+                ).replace('.', ','))
                 
                 # doc.add_paragraph(f"\nFinal Similarity Calculation:")
                 doc.add_paragraph("\nSimilarity(D{}, Q) = Dot(D{}, Q) / (|D{}| × |Q|)".format(
                     doc_id, doc_id, doc_id
                 ))
-                doc.add_paragraph("Similarity(D{}, Q) = {} / ({:.4f} × {:.4f})".format(
+                doc.add_paragraph("Similarity(D{}, Q) = {} / ({:.2f} × {:.2f})".format(
                     doc_id, dot_product, doc_magnitude, query_magnitude
-                ))
-                doc.add_paragraph(f"Similarity(D{doc_id}, Q) = {score:.4f}")
+                ).replace('.', ','))
+                
+                doc.add_paragraph(f"Similarity(D{doc_id}, Q) = {score:.2f}".replace('.', ','))
                 
                 doc.add_paragraph("-" * 40)
 
@@ -519,7 +520,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
             if score > 0:
                 row_cells = results_table.add_row().cells
                 row_cells[0].text = os.path.basename(file_paths[result_doc['id']])
-                row_cells[1].text = f"{score:.4f}"
+                row_cells[1].text = f"{score:.2f}".replace('.', ',')
 
     doc.save(output_filename)
     return output_filename
