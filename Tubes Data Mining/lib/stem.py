@@ -270,3 +270,25 @@ class Stemmer:
             if token['token'] != stemmed_word:  
                 all_steps.append((token['original'], stemmed_word, steps))
         return ' '.join(results), all_steps
+
+# Test section
+if __name__ == "__main__":
+    stemmer = Stemmer()
+    
+    # Test sentence that will be split into words
+    test_sentence = "ya tidak stemming kesamaan dihitung diambil indexnya pembelajaran mendengarkan berlarian"
+    test_words = test_sentence.split()
+    
+    print("=== Testing Stemmer ===")
+    print(f"Original sentence: {test_sentence}\n")
+    print("Word by word stemming:")
+    print("-" * 50)
+    
+    for word in test_words:
+        stemmed, steps = stemmer.stem_word(word)
+        print(f"\nOriginal: {word}")
+        print(f"Stemmed:  {stemmed}")
+        print("Steps:")
+        for step in steps:
+            print(f"- {step}")
+        print("-" * 50)
