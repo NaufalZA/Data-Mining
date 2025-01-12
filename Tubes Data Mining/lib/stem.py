@@ -168,11 +168,9 @@ class Stemmer:
             elif word.startswith('n'):
                 if word[1] in ['d', 't', 'c']:  # Enhanced rule for 'me-' type
                     return word[1:]
-                return 't' + word[1:]
             elif word.startswith('m'):
                 if word[1] in ['b', 'p']:  # Enhanced rule for 'me-' type
                     return word[1:]
-                return word[1:]  # Remove 'm' for 'me-' or 'pe-' type
             elif word.startswith('l') and len(word) > 1:
                 return word[1:]
         return word
@@ -298,7 +296,8 @@ if __name__ == "__main__":
     stemmer = Stemmer()
     
     # Test sentence that will be split into words
-    test_sentence = "ya tidak stemming kesamaan dihitung diambil indexnya pembelajaran mendengarkan berlarian"
+    # test_sentence = "ya tidak stemming kesamaan dihitung diambil indexnya pembelajaran mencegah mendengarkan berlarian"
+    test_sentence = "ya tidak pembelajaran mencegah"
     
     print("=== Testing Stemmer ===")
     print(f"Original sentence: {test_sentence}\n")
