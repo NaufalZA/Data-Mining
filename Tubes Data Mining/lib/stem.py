@@ -308,18 +308,24 @@ if __name__ == "__main__":
     print("=== Testing Stemmer ===")
     print(f"Original sentence: {test_sentence}\n")
     
-    # Using stem_text to process the whole sentence (includes stopword removal)
-    stemmed_text, steps = stemmer.stem_text(test_sentence)
+    # Using stem_text but first get tokens
+    tokens = stemmer.tokenize(test_sentence)
     
-    print("After stopword removal and stemming:")
-    print(f"Result: {stemmed_text}\n")
+    # Filter stopwords but keep all other words
+    filtered_tokens = [t for t in tokens if t['token'].lower() not in stemmer.stopwords]
     
-    print("Detailed steps for each word:")
+    print("Processing each word (excluding stopwords):")
     print("-" * 50)
-    for original, stemmed, word_steps in steps:
-        print(f"\nOriginal: {original}")
-        print(f"Stemmed:  {stemmed}")
+    for token in filtered_tokens:
+        stemmed_word, steps = stemmer.stem_word(token['token'])
+        print(f"\nOriginal: {token['token']}")
+        print(f"Stemmed:  {stemmed_word}")
         print("Steps:")
-        for step in word_steps:
+        for step in steps:
             print(f"- {step}")
         print("-" * 50)
+    
+    # Still show the final stemmed text
+    stemmed_text, _ = stemmer.stem_text(test_sentence)
+    print("\nFinal stemmed text:")
+    print(f"Result: {stemmed_text}")
