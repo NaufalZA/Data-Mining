@@ -166,7 +166,7 @@ class Stemmer:
             elif word.startswith('ny'):
                 return 's' + word[2:]
             elif word.startswith('n'):
-                if word[1] in ['d', 't']:  # Enhanced rule for 'me-' type
+                if word[1] in ['d', 't', 'c']:  # Enhanced rule for 'me-' type
                     return word[1:]
                 return 't' + word[1:]
             elif word.startswith('m'):
