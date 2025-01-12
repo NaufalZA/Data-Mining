@@ -286,23 +286,16 @@ class Stemmer:
         tokens = self.tokenize(text)
         
         # Filter out stopwords before stemming
-        filtered_tokens = [t for t in tokens if t['token'].lower() not in self.stopwords]
+        tokens = [t for t in tokens if t['token'].lower() not in self.stopwords]
         
         results = []
         all_steps = []
-        
-        # First show stopwords that were removed
         for token in tokens:
-            if token['token'].lower() in self.stopwords:
-                all_steps.append((token['original'], None, [f"Removed stopword: '{token['token']}'"]))
-        
-        # Then process remaining words
-        for token in filtered_tokens:
             stemmed_word, steps = self.stem_word(token['token'])
             token['stemmed'] = stemmed_word
             results.append(stemmed_word)
-            all_steps.append((token['original'], stemmed_word, steps))
-            
+            if token['token'] != stemmed_word:  
+                all_steps.append((token['original'], stemmed_word, steps))
         return ' '.join(results), all_steps
 
 # Test section
@@ -321,14 +314,11 @@ if __name__ == "__main__":
     print("After stopword removal and stemming:")
     print(f"Result: {stemmed_text}\n")
     
-    print("Detailed steps for all words:")
+    print("Detailed steps for each word:")
     print("-" * 50)
     for original, stemmed, word_steps in steps:
         print(f"\nOriginal: {original}")
-        if stemmed is None:
-            print("Result: Removed (stopword)")
-        else:
-            print(f"Result:  {stemmed}")
+        print(f"Stemmed:  {stemmed}")
         print("Steps:")
         for step in word_steps:
             print(f"- {step}")
