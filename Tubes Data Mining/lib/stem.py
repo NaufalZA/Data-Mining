@@ -33,6 +33,13 @@ class Stemmer:
             'be': 'be-',
             'pe': 'pe-'
         }
+        # Add rules for compound words
+        self.compound_rules = {
+            'ber': {'ajar': 'ajar'},  # contoh: belajar -> ajar
+            'ke': {'tahu': 'tahu'},   # contoh: ketahui -> tahu
+        }
+        # Add rules for repeated words
+        self.repeated_markers = ['-', '2']  # untuk kata ulang seperti "jalan-jalan" atau "jalan2"
 
     def load_kamus(self):
         with open('documents/Kamus.txt', 'r') as file:
@@ -40,10 +47,9 @@ class Stemmer:
 
     def load_stopwords(self):
         stopwords = set()
-        with open('documents/Stopword.csv', 'r') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                stopwords.add(row[0].lower())
+        with open('documents/Stopword.txt', 'r') as file:
+            for line in file:
+                stopwords.add(line.strip().lower())
         return stopwords
 
     def is_valid_word(self, word):
@@ -138,88 +144,109 @@ class Stemmer:
         next_word, next_prefix = self.remove_prefix(word, iteration + 1)
         return next_word, next_prefix or prefix_type
 
+    def handle_repeated_word(self, word):
+        """Handle repeated words like 'jalan-jalan' or 'jalan2'"""
+        for marker in self.repeated_markers:
+            if marker in word:
+                parts = word.split(marker)
+                if len(parts) == 2 and parts[0] == parts[1]:
+                    return parts[0]
+        return word
+
     def recode_prefix(self, prefix, word):
-        """Handle special recoding cases"""
+        """Enhanced prefix recoding rules based on Asian's modifications"""
         if prefix in ['me', 'pe']:
             if word.startswith('ng'):
-                return word[2:]  
+                return word[2:]
             elif word.startswith('ny'):
-                return 's' + word[2:]  
+                return 's' + word[2:]
             elif word.startswith('n'):
-                return 't' + word[1:]  
+                if word[1] in ['d', 't']:  # Enhanced rule for 'me-' type
+                    return word[1:]
+                return 't' + word[1:]
+            elif word.startswith('m'):
+                if word[1] in ['b', 'p']:  # Enhanced rule for 'me-' type
+                    return word[1:]
+                return 'p' + word[1:]
+            elif word.startswith('l') and len(word) > 1:
+                return word[1:]
         return word
 
     def stem_word(self, word):
         steps = []
+        
+        # Handle repeated words first
+        word = self.handle_repeated_word(word)
+        
         if not self.is_valid_word(word):
             return word, steps
 
+        # Step 1: Dictionary check
         steps.append(f"Step 1: Checking '{word}' in dictionary")
         if self.check_kamus(word):
             steps.append("Result: Found in dictionary")
             return word, steps
 
         original_word = word
-        suffix_removed = False
-        prefix_type = None
 
-        steps.append("Step 2: Checking inflection suffixes")
-        if any(word.endswith(suffix) for suffix in ['lah', 'kah', 'tah', 'pun', 'ku', 'mu', 'nya']):
-            old_word = word
+        # Check special cases for combined prefix-suffix based on Asian's modifications
+        special_cases = {
+            ('be', 'lah'): True,  # Remove prefix first
+            ('be', 'an'): True,   # Remove prefix first
+            ('me', 'i'): True,    # Remove prefix first
+            ('di', 'i'): True,    # Remove prefix first
+            ('pe', 'i'): True,    # Remove prefix first
+            ('ter', 'i'): True,   # Remove prefix first
+            # Add more special cases if needed
+        }
+
+        # Get current prefix and suffix if any
+        current_prefix = self.get_prefix_type(word)
+        current_suffix = None
+        for suffix in ['i', 'an', 'kan', 'lah', 'kah', 'tah', 'pun', 'ku', 'mu', 'nya']:
+            if word.endswith(suffix):
+                current_suffix = suffix
+                break
+
+        # Determine processing order based on special cases
+        if current_prefix and current_suffix and (current_prefix, current_suffix) in special_cases:
+            # Remove prefix first
+            word, prefix_type = self.remove_prefix(word)
+            if prefix_type:
+                steps.append(f"Special case: Removed prefix {prefix_type} first")
+            
+            # Then remove suffix
             word = self.remove_inflection_suffixes(word)
-            steps.append(f"Removed inflection suffix: {old_word} → {word}")
+            word = self.remove_derivation_suffixes(word)
+        else:
+            # Normal processing order
+            # Step 2: Remove inflectional suffixes
+            steps.append("Step 2: Checking inflection suffixes")
+            temp_word = self.remove_inflection_suffixes(word)
+            if temp_word != word:
+                if self.check_kamus(temp_word):
+                    return temp_word, steps
+                word = temp_word
 
-        steps.append(f"Step 3: Checking derivation suffixes for '{word}'")
-        if any(word.endswith(suffix) for suffix in ['i', 'an', 'kan']):
-            temp_word = word
-            if word.endswith('kan'):
-                word = word[:-3]
-                suffix_removed = 'kan'
-                steps.append(f"Removed -kan: '{temp_word}' → '{word}'")
-            elif word.endswith('i'):
-                word = word[:-1]
-                suffix_removed = 'i'
-                steps.append(f"Removed -i: '{temp_word}' → '{word}'")
-            elif word.endswith('an'):
-                word = word[:-2]
-                suffix_removed = 'an'
-                steps.append(f"Removed -an: '{temp_word}' → '{word}'")
+            # Step 3: Remove derivational suffixes
+            steps.append("Step 3: Checking derivation suffixes")
+            temp_word = self.remove_derivation_suffixes(word)
+            if temp_word != word:
+                if self.check_kamus(temp_word):
+                    return temp_word, steps
+                word = temp_word
 
-                if word.endswith('k'):
-                    k_word = word[:-1]
-                    steps.append(f"Checking k-removal: '{word}' → '{k_word}'")
-                    if self.check_kamus(k_word):
-                        steps.append(f"Result: Found '{k_word}' in dictionary")
-                        return k_word, steps
-                    word = temp_word
-                    steps.append("Restored original: k-removal unsuccessful")
+            # Step 4: Remove prefixes
+            steps.append("Step 4: Removing prefixes")
+            word, prefix_type = self.remove_prefix(word)
 
-            if self.check_kamus(word):
-                steps.append(f"Result: Found '{word}' in dictionary")
-                return word, steps
-            word = temp_word
-            steps.append("Restored original: suffix removal unsuccessful")
+        # Step 5: Final dictionary check
+        if self.check_kamus(word):
+            steps.append(f"Found stemmed word '{word}' in dictionary")
+            return word, steps
 
-        if suffix_removed:
-            steps.append("Step 4a: Checking prefix-suffix combinations")
-            prefix = self.get_prefix_type(word)
-            if prefix and suffix_removed in self.forbidden_combinations.get(prefix, []):
-                steps.append(f"Found forbidden combination: {prefix}- with -{suffix_removed}")
-                return original_word, steps
-
-        steps.append("Step 4b: Removing prefixes")
-        word, prefix_type = self.remove_prefix(word)
-        if prefix_type:
-            steps.append(f"Removed prefix type: {prefix_type}")
-
-        if prefix_type:
-            steps.append("Step 5: Checking recoding rules")
-            recoded = self.recode_prefix(prefix_type.rstrip('-'), word)
-            if recoded != word:
-                steps.append(f"Applied recoding: {word} → {recoded}")
-                word = recoded
-
-        steps.append("Step 6: No root word found, returning original word")
+        # If no root word is found, return original
+        steps.append("No root word found, returning original word")
         return original_word, steps
 
     def get_prefix_type(self, word):
@@ -232,10 +259,6 @@ class Stemmer:
         return None
 
     def tokenize(self, text):
-        """
-        Tokenize text into words while handling punctuation and special cases.
-        Returns list of tokens and their positions.
-        """
         text = text.lower()
         text = text.replace('\n', ' ')
         text = text.replace('\t', ' ')
