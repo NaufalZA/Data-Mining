@@ -1,13 +1,5 @@
-import csv
 import re
-from tkinter import filedialog
-import tkinter as tk
-import PyPDF2
-from docx import Document
-import os
 import string
-import math
-from collections import defaultdict
 
 class Stemmer:
     def __init__(self):
@@ -45,10 +37,6 @@ class Stemmer:
 
     def is_valid_word(self, word):
         return bool(re.match('^[a-zA-Z]+$', word))
-
-    def remove_stopwords(self, text):
-        words = text.lower().split()
-        return ' '.join([word for word in words if word not in self.stopwords])
 
     def check_kamus(self, word):
         return word.lower() in self.kamus
