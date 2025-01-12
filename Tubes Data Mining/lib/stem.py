@@ -130,6 +130,8 @@ class Stemmer:
             else:
                 prefix = word[:2]
                 stemmed = word[2:]
+            if prefix == 'be' and stemmed.startswith('r'):
+                stemmed = stemmed[1:]
             prefix_type = self.prefix_types[prefix[:2]]
         else:
             return word, None
