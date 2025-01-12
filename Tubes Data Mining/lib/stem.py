@@ -282,16 +282,27 @@ class Stemmer:
         return tokens
 
     def stem_text(self, text):
+        # First tokenize the text
         tokens = self.tokenize(text)
-        tokens = [t for t in tokens if t['token'] not in self.stopwords]
+        
+        # Filter out stopwords before stemming
+        filtered_tokens = [t for t in tokens if t['token'].lower() not in self.stopwords]
+        
         results = []
         all_steps = []
+        
+        # First show stopwords that were removed
         for token in tokens:
+            if token['token'].lower() in self.stopwords:
+                all_steps.append((token['original'], None, [f"Removed stopword: '{token['token']}'"]))
+        
+        # Then process remaining words
+        for token in filtered_tokens:
             stemmed_word, steps = self.stem_word(token['token'])
             token['stemmed'] = stemmed_word
             results.append(stemmed_word)
-            if token['token'] != stemmed_word:  
-                all_steps.append((token['original'], stemmed_word, steps))
+            all_steps.append((token['original'], stemmed_word, steps))
+            
         return ' '.join(results), all_steps
 
 # Test section
@@ -300,18 +311,25 @@ if __name__ == "__main__":
     
     # Test sentence that will be split into words
     test_sentence = "ya tidak stemming kesamaan dihitung diambil indexnya pembelajaran mendengarkan berlarian"
-    test_words = test_sentence.split()
     
     print("=== Testing Stemmer ===")
     print(f"Original sentence: {test_sentence}\n")
-    print("Word by word stemming:")
-    print("-" * 50)
     
-    for word in test_words:
-        stemmed, steps = stemmer.stem_word(word)
-        print(f"\nOriginal: {word}")
-        print(f"Stemmed:  {stemmed}")
+    # Using stem_text to process the whole sentence (includes stopword removal)
+    stemmed_text, steps = stemmer.stem_text(test_sentence)
+    
+    print("After stopword removal and stemming:")
+    print(f"Result: {stemmed_text}\n")
+    
+    print("Detailed steps for all words:")
+    print("-" * 50)
+    for original, stemmed, word_steps in steps:
+        print(f"\nOriginal: {original}")
+        if stemmed is None:
+            print("Result: Removed (stopword)")
+        else:
+            print(f"Result:  {stemmed}")
         print("Steps:")
-        for step in steps:
+        for step in word_steps:
             print(f"- {step}")
         print("-" * 50)
