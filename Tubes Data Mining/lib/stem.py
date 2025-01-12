@@ -1,3 +1,14 @@
+import csv
+import re
+from tkinter import filedialog
+import tkinter as tk
+import PyPDF2
+from docx import Document
+import os
+import string
+import math
+from collections import defaultdict
+
 class Stemmer:
     def __init__(self):
         self.kamus = self.load_kamus()
