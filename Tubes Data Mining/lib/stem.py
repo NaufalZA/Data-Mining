@@ -78,8 +78,13 @@ class Stemmer:
             original = word
             if word.endswith('kan'):
                 word = word[:-3]
-            elif word.endswith(('i', 'an')):
+            elif word.endswith('an'):
                 word = word[:-2]
+            elif word.endswith('i'):
+                word = word[:-1]
+
+            if self.check_kamus(word):
+                return word
 
             if original.endswith('an') and word.endswith('k'):
                 word = word[:-1]
@@ -87,9 +92,7 @@ class Stemmer:
                     return word
                 word = word + 'k'
 
-            if self.check_kamus(word):
-                return word
-            return original
+            return word  # Return the modified word instead of the original
         return word
 
     def is_forbidden_combination(self, prefix, suffix):
