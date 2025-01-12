@@ -172,7 +172,7 @@ class Stemmer:
             elif word.startswith('m'):
                 if word[1] in ['b', 'p']:  # Enhanced rule for 'me-' type
                     return word[1:]
-                return 'p' + word[1:]
+                return word[1:]  # Remove 'm' for 'me-' or 'pe-' type
             elif word.startswith('l') and len(word) > 1:
                 return word[1:]
         return word
