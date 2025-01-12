@@ -176,31 +176,24 @@ class Stemmer:
         steps = []
         
         # Handle repeated words first
+        original = word
         word = self.handle_repeated_word(word)
+        if word != original:
+            steps.append(f"Found repeated word: '{original}' -> '{word}'")
         
         if not self.is_valid_word(word):
+            steps.append(f"Invalid word: '{word}'")
             return word, steps
 
         # Step 1: Dictionary check
         steps.append(f"Step 1: Checking '{word}' in dictionary")
         if self.check_kamus(word):
-            steps.append("Result: Found in dictionary")
+            steps.append(f"Word '{word}' found in dictionary")
             return word, steps
 
         original_word = word
 
-        # Check special cases for combined prefix-suffix based on Asian's modifications
-        special_cases = {
-            ('be', 'lah'): True,  # Remove prefix first
-            ('be', 'an'): True,   # Remove prefix first
-            ('me', 'i'): True,    # Remove prefix first
-            ('di', 'i'): True,    # Remove prefix first
-            ('pe', 'i'): True,    # Remove prefix first
-            ('ter', 'i'): True,   # Remove prefix first
-            # Add more special cases if needed
-        }
-
-        # Get current prefix and suffix if any
+        # Check special cases for combined prefix-suffix
         current_prefix = self.get_prefix_type(word)
         current_suffix = None
         for suffix in ['i', 'an', 'kan', 'lah', 'kah', 'tah', 'pun', 'ku', 'mu', 'nya']:
@@ -208,45 +201,42 @@ class Stemmer:
                 current_suffix = suffix
                 break
 
-        # Determine processing order based on special cases
-        if current_prefix and current_suffix and (current_prefix, current_suffix) in special_cases:
-            # Remove prefix first
-            word, prefix_type = self.remove_prefix(word)
-            if prefix_type:
-                steps.append(f"Special case: Removed prefix {prefix_type} first")
-            
-            # Then remove suffix
-            word = self.remove_inflection_suffixes(word)
-            word = self.remove_derivation_suffixes(word)
-        else:
-            # Normal processing order
-            # Step 2: Remove inflectional suffixes
-            steps.append("Step 2: Checking inflection suffixes")
-            temp_word = self.remove_inflection_suffixes(word)
-            if temp_word != word:
-                if self.check_kamus(temp_word):
-                    return temp_word, steps
-                word = temp_word
+        if current_prefix and current_suffix:
+            steps.append(f"Found prefix '{current_prefix}' and suffix '{current_suffix}'")
 
-            # Step 3: Remove derivational suffixes
-            steps.append("Step 3: Checking derivation suffixes")
-            temp_word = self.remove_derivation_suffixes(word)
-            if temp_word != word:
-                if self.check_kamus(temp_word):
-                    return temp_word, steps
-                word = temp_word
+        # Normal processing order
+        # Step 2: Remove inflectional suffixes
+        steps.append(f"Step 2: Checking inflection suffixes in '{word}'")
+        temp_word = self.remove_inflection_suffixes(word)
+        if temp_word != word:
+            steps.append(f"Removed inflection suffix: '{word}' -> '{temp_word}'")
+            if self.check_kamus(temp_word):
+                steps.append(f"Found word '{temp_word}' in dictionary after inflection removal")
+                return temp_word, steps
+            word = temp_word
 
-            # Step 4: Remove prefixes
-            steps.append("Step 4: Removing prefixes")
-            word, prefix_type = self.remove_prefix(word)
+        # Step 3: Remove derivational suffixes
+        steps.append(f"Step 3: Checking derivation suffixes in '{word}'")
+        temp_word = self.remove_derivation_suffixes(word)
+        if temp_word != word:
+            steps.append(f"Removed derivation suffix: '{word}' -> '{temp_word}'")
+            if self.check_kamus(temp_word):
+                steps.append(f"Found word '{temp_word}' in dictionary after derivation removal")
+                return temp_word, steps
+            word = temp_word
 
-        # Step 5: Final dictionary check
+        # Step 4: Remove prefixes
+        steps.append(f"Step 4: Checking prefixes in '{word}'")
+        word, prefix_type = self.remove_prefix(word)
+        if prefix_type:
+            steps.append(f"Removed prefix {prefix_type}: -> '{word}'")
+
+        # Final dictionary check
         if self.check_kamus(word):
-            steps.append(f"Found stemmed word '{word}' in dictionary")
+            steps.append(f"Found final stemmed word '{word}' in dictionary")
             return word, steps
 
-        # If no root word is found, return original
-        steps.append("No root word found, returning original word")
+        steps.append(f"No root word found, returning original word '{original_word}'")
         return original_word, steps
 
     def get_prefix_type(self, word):
