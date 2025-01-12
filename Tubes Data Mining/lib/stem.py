@@ -141,7 +141,7 @@ class Stemmer:
         if recoded != stemmed and self.check_kamus(recoded):
             return recoded, prefix_type
 
-        next_word, next_prefix = self.remove_prefix(word, iteration + 1)
+        next_word, next_prefix = self.remove_prefix(stemmed, iteration + 1)
         return next_word, next_prefix or prefix_type
 
     def handle_repeated_word(self, word):
