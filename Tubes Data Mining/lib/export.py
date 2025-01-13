@@ -16,19 +16,16 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
     doc.add_heading('Original Text:', level=1)
     doc.add_paragraph(original_text)
     
-    # Tokenisasi
     tokens = stemmer.tokenize(original_text)
     doc.add_heading('1. Hasil Tokenisasi:', level=1)
     token_text = ', '.join([t['token'] for t in tokens])
     doc.add_paragraph(token_text)
 
-    # Update stopword removal section first
     doc.add_heading('2. Hasil Setelah Removal Stopword:', level=1)
     tokens_without_stopwords = [t for t in tokens if t['token'] not in stemmer.stopwords]
     stopword_text = ', '.join([t['token'] for t in tokens_without_stopwords])
     doc.add_paragraph(stopword_text)
     
-    # Kamus check moved to position 3
     doc.add_heading('3. Hasil Pengecekan Kata Dalam Kamus:', level=1)
     dict_check = [(t['token'], stemmer.check_kamus(t['token'])) for t in tokens_without_stopwords]
     
@@ -50,20 +47,17 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
         row_cells[0].text = word
         row_cells[1].text = 'Ada' if in_dict else 'Tidak ada'
 
-    # Stemming steps moved to position 4
     doc.add_heading('4. Proses Stemming Step by Step:', level=1)
     if steps:
-        # Separate successful and failed stems
         successful_stems = []
         failed_stems = []
         for step in steps:
             original, stemmed, word_steps = step
-            if stemmed != original:  # Changed successfully
+            if stemmed != original: 
                 successful_stems.append(step)
-            else:  # Failed to change
+            else: 
                 failed_stems.append(step)
         
-        # Limit to 8 successful and 2 failed examples
         steps_to_show = successful_stems[:8] + failed_stems[:2]
         
         for original, stemmed, word_steps in steps_to_show:

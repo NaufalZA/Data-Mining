@@ -35,8 +35,8 @@ class SearchUI(QMainWindow):
         # Search area
         search_layout = QHBoxLayout()
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Enter search query...")
-        self.search_btn = QPushButton("Search")
+        self.search_input.setPlaceholderText("Masukkan Query...")
+        self.search_btn = QPushButton("Cari")
         search_layout.addWidget(self.search_input)
         search_layout.addWidget(self.search_btn)
         layout.addLayout(search_layout)

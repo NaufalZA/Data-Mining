@@ -64,12 +64,12 @@ class SearchApplication:
         
     def search_documents(self):
         if not self.window.file_paths:
-            self.window.show_error("Please add some documents first!")
+            self.window.show_error("Masukkan dokumen terlebih dahulu!")
             return
             
         query = self.window.search_input.text().strip()
         if not query:
-            self.window.show_error("Please enter a search query!")
+            self.window.show_error("Masukkan query yang diinginkan!")
             return
             
         try:
