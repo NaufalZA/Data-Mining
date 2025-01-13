@@ -105,7 +105,7 @@ class SearchUI(QMainWindow):
 
     def show_results(self, results):
         self.results_text.clear()
-        self.results_text.append("Documents have been processed and exported. Results files:\n")
+        self.results_text.append("Hasil Search Query:\n")
         self.results_text.append("-" * 50 + "\n")
         
         for doc, score in results:
@@ -135,14 +135,15 @@ class SearchUI(QMainWindow):
 
     def handle_results_double_click(self, event):
         cursor = self.results_text.cursorForPosition(event.pos())
-        text = cursor.block().text()
-        if "Result file:" in text:
-            result_file = text.split("Result file:")[1].strip()
+        text = cursor.block().text().strip()
+        
+        if text.startswith("Processing:"):
+            result_file = text.split("Processing:")[1].strip()
             result_path = os.path.join('results', result_file)
             if os.path.exists(result_path):
                 os.startfile(result_path)
-        elif "Document:" in text:
-            file_name = text.split("Document:")[1].strip()
+        elif text.startswith("Dokumen:"):
+            file_name = text.split("Dokumen:")[1].strip()
             for path in self.file_paths:
                 if os.path.basename(path) == file_name:
                     os.startfile(path)
