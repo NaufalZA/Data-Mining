@@ -1,4 +1,3 @@
-import csv
 import re
 import PyPDF2
 from docx import Document
