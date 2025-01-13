@@ -1,8 +1,12 @@
 from docx import Document
 import os
 import math
+from stem import Stemmer
 
-def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data=None):
+def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data=None, stemmer=None):
+    if stemmer is None:
+        stemmer = Stemmer()
+        
     original_filename = os.path.splitext(os.path.basename(input_file_path))[0]
     output_filename = f"results/Hasil_{original_filename}.docx"
     
