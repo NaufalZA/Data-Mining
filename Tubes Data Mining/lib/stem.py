@@ -26,6 +26,18 @@ class Stemmer:
             'pe': 'pe-'
         }
         self.repeated_markers = ['-', '2']
+        self.suffix_types = {
+            'lah': '-lah',
+            'kah': '-kah',
+            'tah': '-tah',
+            'pun': '-pun',
+            'ku': '-ku',
+            'mu': '-mu',
+            'nya': '-nya',
+            'i': '-i',
+            'an': '-an',
+            'kan': '-kan'
+        }
 
     def load_kamus(self):
         with open('documents/Kamus.txt', 'r') as file:
@@ -42,32 +54,51 @@ class Stemmer:
         return word.lower() in self.kamus
 
     def remove_inflection_suffixes(self, word):
+        original = word
+        suffix_found = None
+
         if word.endswith(('lah', 'kah', 'tah', 'pun')):
-            word = re.sub(r'(lah|kah|tah|pun)$', '', word)
+            for suffix in ['lah', 'kah', 'tah', 'pun']:
+                if word.endswith(suffix):
+                    word = word[:-len(suffix)]
+                    suffix_found = self.suffix_types[suffix]
+                    break
+        
         if word.endswith(('ku', 'mu', 'nya')):
-            word = re.sub(r'(ku|mu|nya)$', '', word)
-        return word
+            for suffix in ['ku', 'mu', 'nya']:
+                if word.endswith(suffix):
+                    word = word[:-len(suffix)]
+                    suffix_found = self.suffix_types[suffix]
+                    break
+
+        return word, suffix_found
 
     def remove_derivation_suffixes(self, word):
+        original = word
+        suffix_found = None
+
         if word.endswith(('i', 'an', 'kan')):
-            original = word
             if word.endswith('kan'):
                 word = word[:-3]
+                suffix_found = self.suffix_types['kan']
             elif word.endswith('an'):
                 word = word[:-2]
+                suffix_found = self.suffix_types['an']
             elif word.endswith('i'):
                 word = word[:-1]
+                suffix_found = self.suffix_types['i']
 
             if self.check_kamus(word):
-                return word
+                return word, suffix_found
 
             if original.endswith('an') and word.endswith('k'):
                 word = word[:-1]
                 if self.check_kamus(word):
-                    return word
+                    return word, suffix_found
                 word = word + 'k'
-            return word
-        return word
+            
+            return word, suffix_found
+        return word, None
 
     def remove_prefix(self, word, iteration=1):
         if iteration > 3:
@@ -149,19 +180,28 @@ class Stemmer:
 
         original_word = word
 
-        temp_word = self.remove_inflection_suffixes(word)
+        # Remove inflection suffixes
+        temp_word, inflection_suffix = self.remove_inflection_suffixes(word)
         if temp_word != word:
+            if inflection_suffix:
+                steps.append(f"Removed inflection suffix {inflection_suffix}")
             if self.check_kamus(temp_word):
                 return temp_word, steps
             word = temp_word
 
-        temp_word = self.remove_derivation_suffixes(word)
+        # Remove derivation suffixes
+        temp_word, derivation_suffix = self.remove_derivation_suffixes(word)
         if temp_word != word:
+            if derivation_suffix:
+                steps.append(f"Removed derivation suffix {derivation_suffix}")
             if self.check_kamus(temp_word):
                 return temp_word, steps
             word = temp_word
 
+        # Remove prefix (existing code)
         word, prefix_type = self.remove_prefix(word)
+        if prefix_type:
+            steps.append(f"Removed prefix {prefix_type}")
 
         if self.check_kamus(word):
             return word, steps

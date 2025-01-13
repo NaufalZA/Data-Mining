@@ -21,15 +21,14 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
     doc.add_heading('1. Hasil Tokenisasi:', level=1)
     token_text = ', '.join([t['token'] for t in tokens])
     doc.add_paragraph(token_text)
-    
-    # Update stopword removal section
+
+    # Update stopword removal section first
     doc.add_heading('2. Hasil Setelah Removal Stopword:', level=1)
-    # Filter out stopwords
     tokens_without_stopwords = [t for t in tokens if t['token'] not in stemmer.stopwords]
     stopword_text = ', '.join([t['token'] for t in tokens_without_stopwords])
     doc.add_paragraph(stopword_text)
     
-    # Kamus - use tokens_without_stopwords instead of valid_tokens
+    # Kamus check moved to position 3
     doc.add_heading('3. Hasil Pengecekan Kata Dalam Kamus:', level=1)
     dict_check = [(t['token'], stemmer.check_kamus(t['token'])) for t in tokens_without_stopwords]
     
@@ -40,7 +39,6 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
     summary.add_run(f"Total kata: {total_words}\n").bold = True
     summary.add_run(f"Kata dasar dalam kamus: {found_words}\n").bold = True
     
-    # Create table for dictionary check
     dict_table = doc.add_table(rows=1, cols=2)
     dict_table.style = 'Table Grid'
     header_cells = dict_table.rows[0].cells
@@ -51,12 +49,85 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
         row_cells = dict_table.add_row().cells
         row_cells[0].text = word
         row_cells[1].text = 'Ada' if in_dict else 'Tidak ada'
-    
-    doc.add_heading('4. Hasil Akhir Stemming:', level=1)
+
+    # Stemming steps moved to position 4
+    doc.add_heading('4. Proses Stemming Step by Step:', level=1)
+    if steps:
+        for original, stemmed, word_steps in steps:
+            p = doc.add_paragraph()
+            p.add_run(f"Kata: {original}\n").bold = True
+            
+            # Langkah 1: Cek Kata Dasar Awal
+            p.add_run("1. Pengecekan Kata Dasar Awal: ")
+            if stemmer.check_kamus(original):
+                p.add_run("Ditemukan dalam kamus → Proses stemming berhenti\n")
+                p.add_run(f"Hasil akhir: {original}\n")
+                p.add_run("─" * 40 + "\n")
+                continue
+            else:
+                p.add_run("Tidak ditemukan dalam kamus → Lanjut proses stemming\n")
+            
+            # Langkah 2: Hapus Inflection Suffixes
+            current_word = original
+            p.add_run("2. Penghapusan Inflectional Suffix: ")
+            inflection_removed, inflection_suffix = stemmer.remove_inflection_suffixes(current_word)
+            if inflection_removed != current_word:
+                p.add_run(f"{current_word} → {inflection_removed}")
+                if inflection_suffix:
+                    p.add_run(f" (Suffix: {inflection_suffix})\n")
+                else:
+                    p.add_run("\n")
+                if stemmer.check_kamus(inflection_removed):
+                    p.add_run("Hasil penghapusan Inflectional Suffix ditemukan dalam kamus → Proses stemming berhenti\n")
+                    p.add_run(f"Hasil akhir: {inflection_removed}\n")
+                    p.add_run("─" * 40 + "\n")
+                    continue
+                p.add_run("Hasil penghapusan Inflectional Suffix tidak ditemukan dalam kamus → Lanjut proses stemming\n")
+                current_word = inflection_removed
+            else:
+                p.add_run("Tidak ada Inflectional Suffix\n")
+            
+            # Langkah 3: Hapus Derivation Suffixes
+            p.add_run("3. Penghapusan Derivational Suffix: ")
+            derivation_removed, derivation_suffix = stemmer.remove_derivation_suffixes(current_word)
+            if derivation_removed != current_word:
+                p.add_run(f"{current_word} → {derivation_removed}")
+                if derivation_suffix:
+                    p.add_run(f" (Suffix: {derivation_suffix})\n")
+                else:
+                    p.add_run("\n")
+                if stemmer.check_kamus(derivation_removed):
+                    p.add_run("Hasil penghapusan Derivational Suffix ditemukan dalam kamus → Proses stemming berhenti\n")
+                    p.add_run(f"Hasil akhir: {derivation_removed}\n")
+                    p.add_run("─" * 40 + "\n")
+                    continue
+                p.add_run("Hasil penghapusan Derivational Suffix tidak ditemukan dalam kamus → Lanjut proses stemming\n")
+                current_word = derivation_removed
+            else:
+                p.add_run("Tidak ada Derivational Suffix\n")
+            
+            # Langkah 4: Hapus Prefixes
+            p.add_run("4. Penghapusan Awalan: ")
+            prefix_removed, prefix_type = stemmer.remove_prefix(current_word)
+            if prefix_type:
+                p.add_run(f"{current_word} → {prefix_removed} (Prefix: {prefix_type})\n")
+                if stemmer.check_kamus(prefix_removed):
+                    p.add_run("Hasil penghapusan Prefix ditemukan dalam kamus → Proses stemming berhenti\n")
+                else:
+                    p.add_run("Hasil penghapusan Prefix tidak ditemukan dalam kamus\n")
+            else:
+                p.add_run("Tidak ada Prefix\n")
+            
+            # Hasil Akhir
+            p.add_run(f"\nHasil akhir: {stemmed}\n")
+            p.add_run("─" * 40 + "\n")
+
+    # Hasil akhir stemming moved to position 5
+    doc.add_heading('5. Hasil Akhir Stemming:', level=1)
     doc.add_paragraph(stemmed_text)
     
     if vsm_data:
-        doc.add_heading('5. Analisis VSM:', level=1)
+        doc.add_heading('6. Analisis VSM:', level=1)
         
         doc.add_paragraph("Berikut adalah matriks term-dokumen yang menunjukkan frekuensi kemunculan setiap kata pada setiap dokumen:")
         
@@ -106,7 +177,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                 row_cells[doc_id+1].text = f"{tf_idf:.2f}".replace('.', ',')
 
     if vsm_data and 'query' in vsm_data:
-        doc.add_heading('6. Hasil Pencarian dan Perhitungan Similiarity:', level=1)
+        doc.add_heading('7. Hasil Pencarian dan Perhitungan Similiarity:', level=1)
         doc.add_paragraph(f"Kata Kunci: {vsm_data['query']}")
         
         doc.add_heading('Analisis Keyword:', level=2)
