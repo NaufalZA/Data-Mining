@@ -40,7 +40,6 @@ class Stemmer:
         }
         # Add rules for repeated words
         self.repeated_markers = ['-', '2']  # untuk kata ulang seperti "jalan-jalan" atau "jalan2"
-        self.repeated_markers = ['-', '2']
 
     def load_kamus(self):
         with open('documents/Kamus.txt', 'r') as file:
@@ -52,7 +51,6 @@ class Stemmer:
             for line in file:
                 stopwords.add(line.strip().lower())
         return stopwords
-            return set(line.strip().lower() for line in file)
 
     def is_valid_word(self, word):
         return bool(re.match('^[a-zA-Z]+$', word))
@@ -95,7 +93,6 @@ class Stemmer:
                 word = word + 'k'
 
             return word  # Return the modified word instead of the original
-            return word
         return word
 
     def is_forbidden_combination(self, prefix, suffix):
@@ -111,7 +108,6 @@ class Stemmer:
     def remove_prefix(self, word, iteration=1):
         if iteration > 3:
             return word, None  
-            return word, None
 
         previous_prefix = None if iteration == 1 else self.get_prefix_type(word)
 
@@ -171,12 +167,12 @@ class Stemmer:
                 return 's' + word[2:]
             elif word.startswith('n'):
                 if word[1] in ['d', 't', 'c']:  # Enhanced rule for 'me-' type
-                if word[1] in ['d', 't', 'c']:
                     return word[1:]
+                return 't' + word[1:]
             elif word.startswith('m'):
                 if word[1] in ['b', 'p']:  # Enhanced rule for 'me-' type
-                if word[1] in ['b', 'p']:
                     return word[1:]
+                return word[1:]  # Remove 'm' for 'me-' or 'pe-' type
             elif word.startswith('l') and len(word) > 1:
                 return word[1:]
         return word
@@ -262,7 +258,6 @@ class Stemmer:
         text = text.replace('\n', ' ')
         text = text.replace('\t', ' ')
         text = text.replace('\r', ' ')
-        text = text.replace('\n', ' ').replace('\t', ' ').replace('\r', ' ')
         for p in self.punctuation:
             text = text.replace(p, ' ')
         text = re.sub(r'[\u200b\u200c\u200d\ufeff\xa0]', ' ', text)
@@ -273,7 +268,6 @@ class Stemmer:
         for word in words:
             if (word and 
                 self.is_valid_word(word)):
-            if word and self.is_valid_word(word):
                 tokens.append({
                     'token': word,
                     'position': position,
@@ -296,7 +290,6 @@ class Stemmer:
             token['stemmed'] = stemmed_word
             results.append(stemmed_word)
             if token['token'] != stemmed_word:  
-            if token['token'] != stemmed_word:
                 all_steps.append((token['original'], stemmed_word, steps))
         return ' '.join(results), all_steps
 
@@ -305,8 +298,7 @@ if __name__ == "__main__":
     stemmer = Stemmer()
     
     # Test sentence that will be split into words
-    # test_sentence = "ya tidak stemming kesamaan dihitung diambil indexnya pembelajaran mencegah mendengarkan berlarian"
-    test_sentence = "ya tidak pembelajaran mencegah"
+    test_sentence = "ya tidak stemming kesamaan dihitung diambil indexnya pembelajaran mendengarkan berlarian"
     
     print("=== Testing Stemmer ===")
     print(f"Original sentence: {test_sentence}\n")
@@ -332,4 +324,3 @@ if __name__ == "__main__":
     stemmed_text, _ = stemmer.stem_text(test_sentence)
     print("\nFinal stemmed text:")
     print(f"Result: {stemmed_text}")
-        return ' '.join(results), all_steps
