@@ -7,7 +7,7 @@ import os
 class SearchUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Document Search System")
+        self.setWindowTitle("House of Algorithm")
         self.setGeometry(100, 100, 800, 600)
 
         # Create central widget and main layout
