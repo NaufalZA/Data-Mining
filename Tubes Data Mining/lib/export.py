@@ -53,7 +53,20 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
     # Stemming steps moved to position 4
     doc.add_heading('4. Proses Stemming Step by Step:', level=1)
     if steps:
-        for original, stemmed, word_steps in steps:
+        # Separate successful and failed stems
+        successful_stems = []
+        failed_stems = []
+        for step in steps:
+            original, stemmed, word_steps = step
+            if stemmed != original:  # Changed successfully
+                successful_stems.append(step)
+            else:  # Failed to change
+                failed_stems.append(step)
+        
+        # Limit to 8 successful and 2 failed examples
+        steps_to_show = successful_stems[:8] + failed_stems[:2]
+        
+        for original, stemmed, word_steps in steps_to_show:
             p = doc.add_paragraph()
             p.add_run(f"Kata: {original}\n").bold = True
             
@@ -69,7 +82,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
             
             # Langkah 2: Hapus Inflection Suffixes
             current_word = original
-            p.add_run("2. Penghapusan Inflectional Suffix: ")
+            p.add_run("2. Removal Inflectional Suffix: ")
             inflection_removed, inflection_suffix = stemmer.remove_inflection_suffixes(current_word)
             if inflection_removed != current_word:
                 p.add_run(f"{current_word} → {inflection_removed}")
@@ -78,17 +91,17 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                 else:
                     p.add_run("\n")
                 if stemmer.check_kamus(inflection_removed):
-                    p.add_run("Hasil penghapusan Inflectional Suffix ditemukan dalam kamus → Proses stemming berhenti\n")
+                    p.add_run("Hasil removal Inflectional Suffix ditemukan dalam kamus → Proses stemming berhenti\n")
                     p.add_run(f"Hasil akhir: {inflection_removed}\n")
                     p.add_run("─" * 40 + "\n")
                     continue
-                p.add_run("Hasil penghapusan Inflectional Suffix tidak ditemukan dalam kamus → Lanjut proses stemming\n")
+                p.add_run("Hasil removal Inflectional Suffix tidak ditemukan dalam kamus → Lanjut proses stemming\n")
                 current_word = inflection_removed
             else:
                 p.add_run("Tidak ada Inflectional Suffix\n")
             
             # Langkah 3: Hapus Derivation Suffixes
-            p.add_run("3. Penghapusan Derivational Suffix: ")
+            p.add_run("3. Removal Derivational Suffix: ")
             derivation_removed, derivation_suffix = stemmer.remove_derivation_suffixes(current_word)
             if derivation_removed != current_word:
                 p.add_run(f"{current_word} → {derivation_removed}")
@@ -97,24 +110,24 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                 else:
                     p.add_run("\n")
                 if stemmer.check_kamus(derivation_removed):
-                    p.add_run("Hasil penghapusan Derivational Suffix ditemukan dalam kamus → Proses stemming berhenti\n")
+                    p.add_run("Hasil removal Derivational Suffix ditemukan dalam kamus → Proses stemming berhenti\n")
                     p.add_run(f"Hasil akhir: {derivation_removed}\n")
                     p.add_run("─" * 40 + "\n")
                     continue
-                p.add_run("Hasil penghapusan Derivational Suffix tidak ditemukan dalam kamus → Lanjut proses stemming\n")
+                p.add_run("Hasil removal Derivational Suffix tidak ditemukan dalam kamus → Lanjut proses stemming\n")
                 current_word = derivation_removed
             else:
                 p.add_run("Tidak ada Derivational Suffix\n")
             
             # Langkah 4: Hapus Prefixes
-            p.add_run("4. Penghapusan Awalan: ")
+            p.add_run("4. Removal Awalan: ")
             prefix_removed, prefix_type = stemmer.remove_prefix(current_word)
             if prefix_type:
                 p.add_run(f"{current_word} → {prefix_removed} (Prefix: {prefix_type})\n")
                 if stemmer.check_kamus(prefix_removed):
-                    p.add_run("Hasil penghapusan Prefix ditemukan dalam kamus → Proses stemming berhenti\n")
+                    p.add_run("Hasil removal Prefix ditemukan dalam kamus → Proses stemming berhenti\n")
                 else:
-                    p.add_run("Hasil penghapusan Prefix tidak ditemukan dalam kamus\n")
+                    p.add_run("Hasil removal Prefix tidak ditemukan dalam kamus\n")
             else:
                 p.add_run("Tidak ada Prefix\n")
             

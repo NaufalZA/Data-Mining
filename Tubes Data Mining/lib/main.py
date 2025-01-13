@@ -1,7 +1,5 @@
 import csv
 import re
-from tkinter import filedialog
-import tkinter as tk
 import PyPDF2
 from docx import Document
 import os
@@ -36,19 +34,15 @@ if __name__ == "__main__":
     stemmer = Stemmer()  # Use the imported Stemmer
     vsm = VSM(stemmer)
     
-    root = tk.Tk()
-    root.withdraw()
+    # Replace file dialog with direct directory reading
+    text_dir = "text"
+    supported_extensions = ('.txt', '.pdf', '.docx')
+    file_paths = []
     
-    file_paths = filedialog.askopenfilenames(
-        title="Select Documents",
-        filetypes=[
-            ("All supported files", "*.txt;*.pdf;*.docx"),
-            ("Text files", "*.txt"),
-            ("PDF files", "*.pdf"),
-            ("Word files", "*.docx"),
-            ("All files", "*.*")
-        ]
-    )
+    # Get all supported files from text directory
+    for file in os.listdir(text_dir):
+        if file.lower().endswith(supported_extensions):
+            file_paths.append(os.path.join(text_dir, file))
     
     if file_paths:
         try:
@@ -95,4 +89,4 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Terjadi kesalahan: {e}")
     else:
-        print("Tidak ada file yang dipilih")
+        print("Tidak ada file yang ditemukan di direktori text/")

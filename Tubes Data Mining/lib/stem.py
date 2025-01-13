@@ -5,13 +5,6 @@ class Stemmer:
     def __init__(self):
         self.kamus = self.load_kamus()
         self.stopwords = self.load_stopwords()
-        self.forbidden_combinations = {
-            'be': ['i'],
-            'di': ['an'],
-            'ke': ['i', 'kan'],
-            'me': ['an'],
-            'se': ['i', 'kan']
-        }
         self.punctuation = (string.punctuation + '"' + '"' + ''' + ''' + '—' + '–' + 
                           '•' + '·' + '⋅' + '∙' + '‧' + '・' + '･' + '►' + '▪' + '○' + 
                           '●' + '♦' + '■' + '★' + '☆' + '✓' + '✔' + '❖')
@@ -48,7 +41,7 @@ class Stemmer:
             return set(line.strip().lower() for line in file)
 
     def is_valid_word(self, word):
-        return bool(re.match('^[a-zA-Z]+$', word))
+        return bool(re.match('^[a-zA-Z]+$', word)) and len(word) > 1
 
     def check_kamus(self, word):
         return word.lower() in self.kamus
