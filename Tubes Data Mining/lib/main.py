@@ -5,9 +5,6 @@ import tkinter as tk
 import PyPDF2
 from docx import Document
 import os
-import string
-import math
-from collections import defaultdict
 from stem import Stemmer  
 from vsm import VSM
 from export import export_to_word

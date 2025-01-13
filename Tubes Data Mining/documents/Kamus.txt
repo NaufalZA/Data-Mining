@@ -1,3 +1,6 @@
+algoritma
+metoda
+salah
 abad
 abah
 abangan
@@ -18695,7 +18698,6 @@ lutu
 lutut
 luwes
 luyu
-m
 macakal
 macan
 mace
@@ -21079,7 +21081,6 @@ setreng
 setrika
 sfikmograf
 sfingter
-si
 sia-sia
 siap-sedia
 siarat
@@ -21459,7 +21460,6 @@ syubhat
 syukur
 syur
 syurah
-t
 taala
 taasub
 taawud
