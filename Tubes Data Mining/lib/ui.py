@@ -22,8 +22,10 @@ class SearchUI(QMainWindow):
 
         file_buttons = QVBoxLayout()
         self.add_file_btn = QPushButton("Add Files")
+        self.remove_file_btn = QPushButton("Remove File")
         self.clear_files_btn = QPushButton("Clear Files")
         file_buttons.addWidget(self.add_file_btn)
+        file_buttons.addWidget(self.remove_file_btn)
         file_buttons.addWidget(self.clear_files_btn)
         file_buttons.addStretch()
         file_layout.addLayout(file_buttons)
@@ -51,12 +53,28 @@ class SearchUI(QMainWindow):
 
         # Connect signals
         self.add_file_btn.clicked.connect(self.add_files)
+        self.remove_file_btn.clicked.connect(self.remove_selected_file)
         self.clear_files_btn.clicked.connect(self.clear_files)
         self.search_btn.clicked.connect(self.search)
         self.search_input.returnPressed.connect(self.search)
+        self.file_list.itemDoubleClicked.connect(self.open_file)
+        self.results_text.mouseDoubleClickEvent = self.handle_results_double_click
 
         # Store file paths
         self.file_paths = []
+        
+        # Load files from text directory
+        self.load_text_directory()
+
+    def load_text_directory(self):
+        text_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'text')
+        if os.path.exists(text_dir):
+            for filename in os.listdir(text_dir):
+                file_path = os.path.join(text_dir, filename)
+                if os.path.isfile(file_path) and filename.lower().endswith(('.txt', '.pdf', '.docx')):
+                    if file_path not in self.file_paths:
+                        self.file_paths.append(file_path)
+                        self.file_list.addItem(os.path.basename(file_path))
 
     def add_files(self):
         files, _ = QFileDialog.getOpenFileNames(
@@ -71,6 +89,16 @@ class SearchUI(QMainWindow):
                 if file_path not in self.file_paths:
                     self.file_paths.append(file_path)
                     self.file_list.addItem(os.path.basename(file_path))
+
+    def remove_selected_file(self):
+        current_item = self.file_list.currentItem()
+        if current_item:
+            file_name = current_item.text()
+            for i, path in enumerate(self.file_paths):
+                if os.path.basename(path) == file_name:
+                    self.file_paths.pop(i)
+                    break
+            self.file_list.takeItem(self.file_list.row(current_item))
 
     def clear_files(self):
         self.file_paths.clear()
@@ -101,3 +129,20 @@ class SearchUI(QMainWindow):
             self.progress.hide()
         else:
             self.progress.show()
+
+    def open_file(self, item):
+        file_name = item.text()
+        for path in self.file_paths:
+            if os.path.basename(path) == file_name:
+                os.startfile(path)
+                break
+
+    def handle_results_double_click(self, event):
+        cursor = self.results_text.cursorForPosition(event.pos())
+        text = cursor.block().text()
+        if "Document:" in text:
+            file_name = text.split("Document:")[1].strip()
+            for path in self.file_paths:
+                if os.path.basename(path) == file_name:
+                    os.startfile(path)
+                    break

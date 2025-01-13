@@ -49,7 +49,12 @@ class SearchApplication:
         self.stemmer = Stemmer()
         self.vsm = VSM(self.stemmer)
         
-        # Connect signals properly
+        # Create results directory if it doesn't exist
+        results_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results')
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+        
+        # Connect signals
         self.window.search_btn.clicked.connect(self.search_documents)
         self.window.search_input.returnPressed.connect(self.search_documents)
         
