@@ -92,7 +92,7 @@ if __name__ == "__main__":
                         'query': query,
                         'search_results': results
                     }
-                    export_to_word(text, stemmed_text, steps, doc_path, vsm_data, stemmer)
+                    export_to_word(text, stemmed_text, steps, doc_path, vsm_data, stemmer, file_paths)
                 print("-" * 50)
                 
         except Exception as e:

@@ -3,7 +3,7 @@ import os
 import math
 from stem import Stemmer
 
-def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data=None, stemmer=None):
+def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data=None, stemmer=None, file_paths=None):
     if stemmer is None:
         stemmer = Stemmer()
         
@@ -194,7 +194,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
         header_cells[1].text = 'Nilai Similiarity'
         
         for result_doc, score in vsm_data['search_results']:
-            if score > 0:
+            if score > 0 and file_paths:
                 row_cells = results_table.add_row().cells
                 row_cells[0].text = os.path.basename(file_paths[result_doc['id']])
                 row_cells[1].text = f"{score:.2f}".replace('.', ',')
