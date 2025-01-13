@@ -10,6 +10,7 @@ import math
 from collections import defaultdict
 from stem import Stemmer  
 from vsm import VSM
+from export import export_to_word
 
 def read_file_content(file_path):
     file_extension = os.path.splitext(file_path)[1].lower()
