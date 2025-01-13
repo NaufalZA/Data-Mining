@@ -114,11 +114,16 @@ class SearchUI(QMainWindow):
 
     def show_results(self, results):
         self.results_text.clear()
-        self.results_text.append("Search Results:\n")
+        self.results_text.append("Documents have been processed and exported. Results files:\n")
         self.results_text.append("-" * 50 + "\n")
         
         for doc, score in results:
-            self.results_text.append(f"Document: {os.path.basename(self.file_paths[doc['id']])}")
+            original_file = os.path.basename(self.file_paths[doc['id']])
+            result_file = f"Hasil_{os.path.splitext(original_file)[0]}.docx"
+            result_path = os.path.join('results', result_file)
+            
+            self.results_text.append(f"Dokumen: {original_file}")
+            self.results_text.append(f"Processing: {result_file}")
             self.results_text.append(f"Similarity Score: {score:.4f}\n")
             self.results_text.append("-" * 50 + "\n")
 
@@ -140,7 +145,12 @@ class SearchUI(QMainWindow):
     def handle_results_double_click(self, event):
         cursor = self.results_text.cursorForPosition(event.pos())
         text = cursor.block().text()
-        if "Document:" in text:
+        if "Result file:" in text:
+            result_file = text.split("Result file:")[1].strip()
+            result_path = os.path.join('results', result_file)
+            if os.path.exists(result_path):
+                os.startfile(result_path)
+        elif "Document:" in text:
             file_name = text.split("Document:")[1].strip()
             for path in self.file_paths:
                 if os.path.basename(path) == file_name:
