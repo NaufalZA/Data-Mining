@@ -11,11 +11,8 @@ from PyQt6.QtWidgets import QApplication
 from ui import SearchUI
 
 def clean_text(text):
-    # Remove NULL bytes
     text = text.replace('\x00', '')
-    # Remove control characters except newlines and tabs
     text = ''.join(char for char in text if char == '\n' or char == '\t' or ord(char) >= 32)
-    # Replace invalid XML characters
     text = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', text)
     return text
 
@@ -49,12 +46,10 @@ class SearchApplication:
         self.stemmer = Stemmer()
         self.vsm = VSM(self.stemmer)
         
-        # Create results directory if it doesn't exist
         results_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results')
         if not os.path.exists(results_dir):
             os.makedirs(results_dir)
         
-        # Connect signals
         self.window.search_btn.clicked.connect(self.search_documents)
         self.window.search_input.returnPressed.connect(self.search_documents)
         
@@ -73,29 +68,21 @@ class SearchApplication:
             return
             
         try:
-            # Reset VSM
             self.vsm = VSM(self.stemmer)
-            
-            # Show progress bar
             self.window.progress.show()
             total_files = len(self.window.file_paths)
             
-            # Load and process documents
             for i, file_path in enumerate(self.window.file_paths):
                 text = read_file_content(file_path)
                 self.vsm.add_document(i, text)
                 self.window.update_progress(i + 1, total_files)
                 
-            # Calculate weights
             self.vsm.calculate_weights()
             
-            # Perform search
             results = self.vsm.search(query)
             
-            # Show results
             self.window.show_results(results)
             
-            # Export results
             for doc_id in range(len(self.window.file_paths)):
                 doc_path = self.window.file_paths[doc_id]
                 text = read_file_content(doc_path)

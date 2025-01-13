@@ -10,12 +10,10 @@ class SearchUI(QMainWindow):
         self.setWindowTitle("House of Algorithm")
         self.setGeometry(100, 100, 800, 600)
 
-        # Create central widget and main layout
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
 
-        # File selection area
         file_layout = QHBoxLayout()
         self.file_list = QListWidget()
         file_layout.addWidget(self.file_list)
@@ -32,7 +30,6 @@ class SearchUI(QMainWindow):
 
         layout.addLayout(file_layout)
 
-        # Search area
         search_layout = QHBoxLayout()
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Masukkan Query...")
@@ -41,17 +38,14 @@ class SearchUI(QMainWindow):
         search_layout.addWidget(self.search_btn)
         layout.addLayout(search_layout)
 
-        # Progress bar
         self.progress = QProgressBar()
         self.progress.hide()
         layout.addWidget(self.progress)
 
-        # Results area
         self.results_text = QTextEdit()
         self.results_text.setReadOnly(True)
         layout.addWidget(self.results_text)
 
-        # Connect signals
         self.add_file_btn.clicked.connect(self.add_files)
         self.remove_file_btn.clicked.connect(self.remove_selected_file)
         self.clear_files_btn.clicked.connect(self.clear_files)
@@ -60,10 +54,8 @@ class SearchUI(QMainWindow):
         self.file_list.itemDoubleClicked.connect(self.open_file)
         self.results_text.mouseDoubleClickEvent = self.handle_results_double_click
 
-        # Store file paths
         self.file_paths = []
         
-        # Load files from text directory
         self.load_text_directory()
 
     def load_text_directory(self):
@@ -104,9 +96,8 @@ class SearchUI(QMainWindow):
         self.file_paths.clear()
         self.file_list.clear()
         self.results_text.clear()
-
+        
     def search(self):
-        # This will be implemented in main.py
         pass
 
     def show_error(self, message):

@@ -173,7 +173,6 @@ class Stemmer:
 
         original_word = word
 
-        # Remove inflection suffixes
         temp_word, inflection_suffix = self.remove_inflection_suffixes(word)
         if temp_word != word:
             if inflection_suffix:
@@ -182,7 +181,6 @@ class Stemmer:
                 return temp_word, steps
             word = temp_word
 
-        # Remove derivation suffixes
         temp_word, derivation_suffix = self.remove_derivation_suffixes(word)
         if temp_word != word:
             if derivation_suffix:
@@ -191,7 +189,6 @@ class Stemmer:
                 return temp_word, steps
             word = temp_word
 
-        # Remove prefix (existing code)
         word, prefix_type = self.remove_prefix(word)
         if prefix_type:
             steps.append(f"Removed prefix {prefix_type}")

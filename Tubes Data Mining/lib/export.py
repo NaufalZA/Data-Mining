@@ -74,7 +74,6 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
             else:
                 p.add_run("Tidak ditemukan dalam kamus → Lanjut proses stemming\n")
             
-            # Langkah 2: Hapus Inflection Suffixes
             current_word = original
             p.add_run("2. Removal Inflectional Suffix: ")
             inflection_removed, inflection_suffix = stemmer.remove_inflection_suffixes(current_word)
@@ -94,7 +93,6 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
             else:
                 p.add_run("Tidak ada Inflectional Suffix\n")
             
-            # Langkah 3: Hapus Derivation Suffixes
             p.add_run("3. Removal Derivational Suffix: ")
             derivation_removed, derivation_suffix = stemmer.remove_derivation_suffixes(current_word)
             if derivation_removed != current_word:
@@ -113,7 +111,6 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
             else:
                 p.add_run("Tidak ada Derivational Suffix\n")
             
-            # Langkah 4: Hapus Prefixes
             p.add_run("4. Removal Prefix: ")
             prefix_removed, prefix_type = stemmer.remove_prefix(current_word)
             if prefix_type:
@@ -125,11 +122,9 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
             else:
                 p.add_run("Tidak ada Prefix\n")
             
-            # Hasil Akhir
             p.add_run(f"\nHasil akhir: {stemmed}\n")
             p.add_run("─" * 40 + "\n")
 
-    # Hasil akhir stemming moved to position 5
     doc.add_heading('5. Hasil Akhir Stemming:', level=1)
     doc.add_paragraph(stemmed_text)
     
@@ -154,7 +149,6 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                 freq = vsm_data['term_doc_freq'][term][doc_id]
                 row_cells[doc_id+1].text = str(freq)
 
-        # Tambahkan tabel IDF
         doc.add_heading('Inverse Document Frequency (IDF):', level=2)
         idf_table = doc.add_table(rows=1, cols=2)
         idf_table.style = 'Table Grid'
@@ -166,7 +160,6 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
             row_cells[0].text = term
             row_cells[1].text = f"{vsm_data['idf'][term]:.2f}".replace('.', ',')
 
-        # Tambahkan tabel TF-IDF
         doc.add_heading('TF-IDF Weights:', level=2)
         tf_idf_table = doc.add_table(rows=1, cols=len(vsm_data['documents']) + 1)
         tf_idf_table.style = 'Table Grid'
@@ -252,7 +245,6 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                     doc_magnitude
                 ).replace('.', ','))
                 
-                # doc.add_paragraph(f"\nFinal Similarity Calculation:")
                 doc.add_paragraph("\nSimilarity(D{}, Q) = Dot(D{}, Q) / (|D{}| × |Q|)".format(
                     doc_id, doc_id, doc_id
                 ))
