@@ -7,6 +7,15 @@ from stem import Stemmer
 from vsm import VSM
 from export import export_to_word
 
+def clean_text(text):
+    # Remove NULL bytes
+    text = text.replace('\x00', '')
+    # Remove control characters except newlines and tabs
+    text = ''.join(char for char in text if char == '\n' or char == '\t' or ord(char) >= 32)
+    # Replace invalid XML characters
+    text = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', text)
+    return text
+
 def read_file_content(file_path):
     file_extension = os.path.splitext(file_path)[1].lower()
     
@@ -16,16 +25,16 @@ def read_file_content(file_path):
             text = ''
             for page in pdf_reader.pages:
                 text += page.extract_text() + '\n'
-            return text
+            return clean_text(text)
             
     elif file_extension == '.docx':
         doc = Document(file_path)
         text = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
-        return text
+        return clean_text(text)
         
     elif file_extension == '.txt':
         with open(file_path, 'r', encoding='utf-8') as file:
-            return file.read()
+            return clean_text(file.read())
     
     else:
         raise ValueError("Unsupported file format")

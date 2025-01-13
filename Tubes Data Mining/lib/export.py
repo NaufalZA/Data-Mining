@@ -120,7 +120,7 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
                 p.add_run("Tidak ada Derivational Suffix\n")
             
             # Langkah 4: Hapus Prefixes
-            p.add_run("4. Removal Awalan: ")
+            p.add_run("4. Removal Prefix: ")
             prefix_removed, prefix_type = stemmer.remove_prefix(current_word)
             if prefix_type:
                 p.add_run(f"{current_word} → {prefix_removed} (Prefix: {prefix_type})\n")
