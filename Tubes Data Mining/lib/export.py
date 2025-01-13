@@ -52,51 +52,11 @@ def export_to_word(original_text, stemmed_text, steps, input_file_path, vsm_data
         row_cells[0].text = word
         row_cells[1].text = 'Ada' if in_dict else 'Tidak ada'
     
-    doc.add_heading('4. Step-by-Step Stemming:', level=1)
-    for token in tokens_without_stopwords:
-        word = token['token']
-        doc.add_paragraph(f"\nProses stemming untuk kata '{word}':")
-        
-        # Check if word is already in dictionary
-        if stemmer.check_kamus(word):
-            doc.add_paragraph(f"→ Kata '{word}' sudah ada dalam kamus")
-            continue
-            
-        # Remove inflection suffixes
-        temp_word = stemmer.remove_inflection_suffixes(word)
-        if temp_word != word:
-            doc.add_paragraph(f"→ Hapus akhiran infleksional: '{word}' → '{temp_word}'")
-            if stemmer.check_kamus(temp_word):
-                doc.add_paragraph("  ✓ Kata ditemukan dalam kamus")
-                continue
-            word = temp_word
-            
-        # Remove derivation suffixes    
-        temp_word = stemmer.remove_derivation_suffixes(word)
-        if temp_word != word:
-            doc.add_paragraph(f"→ Hapus akhiran derivasional: '{word}' → '{temp_word}'")
-            if stemmer.check_kamus(temp_word):
-                doc.add_paragraph("  ✓ Kata ditemukan dalam kamus")
-                continue
-            word = temp_word
-            
-        # Remove prefix
-        temp_word, prefix_type = stemmer.remove_prefix(word)
-        if temp_word != word:
-            doc.add_paragraph(f"→ Hapus awalan ({prefix_type}): '{word}' → '{temp_word}'")
-            if stemmer.check_kamus(temp_word):
-                doc.add_paragraph("  ✓ Kata ditemukan dalam kamus")
-                continue
-            word = temp_word
-            
-        if not stemmer.check_kamus(word):
-            doc.add_paragraph("→ Kata dasar tidak ditemukan dalam kamus")
-            
-    doc.add_heading('5. Hasil Akhir Stemming:', level=1)
+    doc.add_heading('4. Hasil Akhir Stemming:', level=1)
     doc.add_paragraph(stemmed_text)
-
+    
     if vsm_data:
-        doc.add_heading('6. Analisis VSM:', level=1)
+        doc.add_heading('5. Analisis VSM:', level=1)
         
         doc.add_paragraph("Berikut adalah matriks term-dokumen yang menunjukkan frekuensi kemunculan setiap kata pada setiap dokumen:")
         
